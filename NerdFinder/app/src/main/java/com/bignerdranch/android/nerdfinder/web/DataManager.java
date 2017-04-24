@@ -229,4 +229,8 @@ public class DataManager {
     public Venue getVenue(final @NonNull String venueId) {
         return mVenues.containsKey(venueId) ? mVenues.get(venueId) : null;
     }
+
+    public boolean isLoggedIn() {
+        return sTokenStore.getAccessToken() != null;
+    }
 }

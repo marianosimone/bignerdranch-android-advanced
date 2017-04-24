@@ -1,27 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
+              xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:padding="2dp">
 
     <TextView
         android:id="@+id/fragment_venue_detail_venue_name_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="20sp"/>
+        android:textSize="20sp"
+        tools:text="Venue Name"/>
 
     <TextView
         android:id="@+id/fragment_venue_detail_venue_address_text_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="16sp"/>
+        android:textSize="16sp"
+        tools:text="Venue Address"/>
+
+    <TextView
+        android:id="@+id/fragment_venue_detail_venue_categories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        tools:text="one category, another category"/>
+
+    <TextView
+        android:id="@+id/fragment_venue_detail_number_of_check_ins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="5 check-ins"/>
 
     <Button
         android:id="@+id/fragment_venue_detail_check_in_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="gone"
-        android:textSize="16sp"
-        android:text="@string/check_in_button"/>
+        android:text="@string/check_in_button"
+        android:textSize="16sp"/>
+
 </LinearLayout>

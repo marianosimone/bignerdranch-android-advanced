@@ -27,4 +27,9 @@ public class Category {
     public Icon getIcon() {
         return mIcon;
     }
+
+    @Override
+    public String toString() {
+        return mName;
+    }
 }

@@ -7,4 +7,8 @@
     <string name="expired_token_dialog_title">Expired Token</string>
     <string name="expired_token_dialog_message">Your access token has expired.
         Please reauthenticate with Foursquare and try again.</string>
+    <plurals name="venue_numberOfCheckIns">
+        <item quantity="one">%d check-in</item>
+        <item quantity="other">%d check-ins</item>
+    </plurals>
 </resources>

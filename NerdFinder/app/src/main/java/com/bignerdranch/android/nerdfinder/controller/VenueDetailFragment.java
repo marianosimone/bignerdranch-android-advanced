@@ -3,6 +3,7 @@ package com.bignerdranch.android.nerdfinder.controller;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +13,11 @@ import android.widget.Toast;
 
 import com.bignerdranch.android.nerdfinder.R;
 import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
-import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.Venue;
 import com.bignerdranch.android.nerdfinder.web.DataManager;
+
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
 
 public class VenueDetailFragment extends Fragment implements VenueCheckInListener {
     private static final String ARG_VENUE_ID = "VenueDetailFragment.VenueId";
@@ -23,8 +26,10 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
     private Venue mVenue;
     private TextView mVenueNameTextView;
     private TextView mVenueAddressTextView;
+    private TextView mVenueCategoriesTextView;
+    private TextView mNumberOfCheckInsTextView;
+
     private Button mCheckInButton;
-    private TokenStore mTokenStore;
     private DataManager mDataManager;
 
     public static VenueDetailFragment newInstance(String venueId) {
@@ -40,8 +45,6 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mTokenStore = TokenStore.get(getContext());
     }
 
     @Override
@@ -49,6 +52,8 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         View view = inflater.inflate(R.layout.fragment_venue_detail, container, false);
         mVenueNameTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_venue_name_text_view);
         mVenueAddressTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_venue_address_text_view);
+        mVenueCategoriesTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_venue_categories);
+        mNumberOfCheckInsTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_number_of_check_ins);
         mCheckInButton = (Button) view.findViewById(R.id.fragment_venue_detail_check_in_button);
         return view;
     }
@@ -67,10 +72,21 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         super.onResume();
         mVenueNameTextView.setText(mVenue.getName());
         mVenueAddressTextView.setText(mVenue.getFormattedAddress());
-        if (mTokenStore.getAccessToken() != null) {
-            mCheckInButton.setVisibility(View.VISIBLE);
-            mCheckInButton.setOnClickListener(mCheckInClickListener);
+        if (!mVenue.getCategories().isEmpty()) {
+            mVenueCategoriesTextView.setText(TextUtils.join(", ", mVenue.getCategories()));
+            mVenueCategoriesTextView.setVisibility(VISIBLE);
+        } else {
+            mVenueCategoriesTextView.setVisibility(GONE);
         }
+        mNumberOfCheckInsTextView.setText(
+                getResources().getQuantityString(
+                        R.plurals.venue_numberOfCheckIns,
+                        mVenue.getStats().getCheckInsCount(),
+                        mVenue.getStats().getCheckInsCount()
+                )
+        );
+        mCheckInButton.setOnClickListener(mCheckInClickListener);
+        mCheckInButton.setVisibility(mDataManager.isLoggedIn() ? VISIBLE : GONE);
     }
 
     @Override
@@ -88,8 +104,8 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
 
     @Override
     public void onVenueCheckInFinished() {
-        Toast.makeText(getContext(), R.string.successful_check_in_message,
-                Toast.LENGTH_SHORT)
+        Toast
+                .makeText(getContext(), R.string.successful_check_in_message, Toast.LENGTH_SHORT)
                 .show();
     }
 }

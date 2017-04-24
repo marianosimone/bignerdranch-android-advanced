@@ -23,6 +23,9 @@ public class Venue {
     @SerializedName("categories")
     private List<Category> mCategoryList;
 
+    @SerializedName("stats")
+    private VenueStats mStats;
+
     private Category mPrimaryCategory;
 
     public String getId() {
@@ -48,5 +51,13 @@ public class Venue {
             }
         }
         return mPrimaryCategory;
+    }
+
+    public List<Category> getCategories() {
+        return mCategoryList;
+    }
+
+    public VenueStats getStats() {
+        return mStats;
     }
 }
