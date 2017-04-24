@@ -2,6 +2,7 @@ package com.bignerdranch.android.nerdfinder.controller;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -14,20 +15,23 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.bignerdranch.android.nerdfinder.R;
+import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.Venue;
 import com.bignerdranch.android.nerdfinder.view.VenueListAdapter;
+import com.bignerdranch.android.nerdfinder.web.DataManager;
 
 import java.util.Collections;
 import java.util.List;
 
-public class VenueListFragment extends Fragment {
+public class VenueListFragment extends Fragment implements VenueSearchListener {
     private static final int AUTHENTICATION_ACTIVITY_REQUEST = 0;
 
     private RecyclerView mRecyclerView;
     private VenueListAdapter mVenueListAdapter;
     private List<Venue> mVenueList;
     private TokenStore mTokenStore;
+    private DataManager mDataManager;
 
     public static VenueListFragment newInstance() {
         return new VenueListFragment();
@@ -49,7 +53,7 @@ public class VenueListFragment extends Fragment {
         mRecyclerView = (RecyclerView) view.findViewById(R.id.venueListRecyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         mRecyclerView.setLayoutManager(layoutManager);
-        mVenueListAdapter = new VenueListAdapter(Collections.EMPTY_LIST);
+        mVenueListAdapter = new VenueListAdapter(Collections.<Venue>emptyList());
         mRecyclerView.setAdapter(mVenueListAdapter);
         return view;
     }
@@ -57,11 +61,15 @@ public class VenueListFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        mDataManager = DataManager.get(getContext());
+        mDataManager.addVenueSearchListener(this);
+        mDataManager.fetchVenueSearch();
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        mDataManager.removeVenueSearchListener(this);
     }
 
     @Override
@@ -97,5 +105,11 @@ public class VenueListFragment extends Fragment {
             getActivity().invalidateOptionsMenu();
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onVenueSearchFinished(final @NonNull List<Venue> venues) {
+        mVenueList = venues;
+        mVenueListAdapter.setVenueList(mVenueList);
     }
 }
