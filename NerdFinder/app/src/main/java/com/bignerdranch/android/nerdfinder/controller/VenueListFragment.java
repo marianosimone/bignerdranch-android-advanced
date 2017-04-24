@@ -24,6 +24,9 @@ import com.bignerdranch.android.nerdfinder.web.DataManager;
 import java.util.Collections;
 import java.util.List;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 public class VenueListFragment extends Fragment implements VenueSearchListener {
     private static final int AUTHENTICATION_ACTIVITY_REQUEST = 0;
 
@@ -47,7 +50,7 @@ public class VenueListFragment extends Fragment implements VenueSearchListener {
     public View onCreateView(
             LayoutInflater inflater, @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_venue_list, container, false);
+        final View view = inflater.inflate(R.layout.fragment_venue_list, container, false);
         final RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.venueListRecyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
@@ -61,6 +64,10 @@ public class VenueListFragment extends Fragment implements VenueSearchListener {
         super.onStart();
         mDataManager = DataManager.get(getContext());
         mDataManager.addVenueSearchListener(this);
+        final View progressBar = getProgressBar();
+        if (progressBar != null) {
+            progressBar.setVisibility(VISIBLE);
+        }
         mDataManager.fetchVenueSearch();
     }
 
@@ -108,5 +115,14 @@ public class VenueListFragment extends Fragment implements VenueSearchListener {
     @Override
     public void onVenueSearchFinished(final @NonNull List<Venue> venues) {
         mVenueListAdapter.setVenueList(venues);
+        final View progressBar = getProgressBar();
+        if (progressBar != null) {
+            progressBar.setVisibility(GONE);
+        }
+    }
+
+    @Nullable
+    private View getProgressBar() {
+        return getView() != null ? getView().findViewById(R.id.venueListProgressBar) : null;
     }
 }
