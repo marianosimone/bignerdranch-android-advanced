@@ -27,9 +27,7 @@ import java.util.List;
 public class VenueListFragment extends Fragment implements VenueSearchListener {
     private static final int AUTHENTICATION_ACTIVITY_REQUEST = 0;
 
-    private RecyclerView mRecyclerView;
     private VenueListAdapter mVenueListAdapter;
-    private List<Venue> mVenueList;
     private TokenStore mTokenStore;
     private DataManager mDataManager;
 
@@ -50,11 +48,11 @@ public class VenueListFragment extends Fragment implements VenueSearchListener {
             LayoutInflater inflater, @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_venue_list, container, false);
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.venueListRecyclerView);
+        final RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.venueListRecyclerView);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        mRecyclerView.setLayoutManager(layoutManager);
-        mVenueListAdapter = new VenueListAdapter(Collections.<Venue>emptyList());
-        mRecyclerView.setAdapter(mVenueListAdapter);
+        recyclerView.setLayoutManager(layoutManager);
+        mVenueListAdapter = new VenueListAdapter(Collections.emptyList());
+        recyclerView.setAdapter(mVenueListAdapter);
         return view;
     }
 
@@ -109,7 +107,6 @@ public class VenueListFragment extends Fragment implements VenueSearchListener {
 
     @Override
     public void onVenueSearchFinished(final @NonNull List<Venue> venues) {
-        mVenueList = venues;
-        mVenueListAdapter.setVenueList(mVenueList);
+        mVenueListAdapter.setVenueList(venues);
     }
 }

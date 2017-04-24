@@ -25,9 +25,6 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -92,6 +89,7 @@ public class DataManager {
             final Retrofit retrofit = new Retrofit.Builder()
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .addConverterFactory(GsonConverterFactory.create(gson))
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                     .client(client)
                     .build();
 
@@ -100,6 +98,7 @@ public class DataManager {
                     .addInterceptor(sAuthorizationInterceptor)
                     .addInterceptor(sAuthenticatedRequestInterceptor)
                     .build();
+
             final Retrofit authenticatedRetrofit = new Retrofit.Builder()
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .client(authenticatedClient)
@@ -127,24 +126,18 @@ public class DataManager {
     public void fetchVenueSearch() {
         final VenueInterface venueInterface = mRetrofit.create(VenueInterface.class);
         venueInterface.venueSearch(TEST_LAT_LNG)
-                .enqueue(new Callback<VenueSearchResponse>() {
-                    @Override
-                    public void onResponse(
-                            final @NonNull Call<VenueSearchResponse> call,
-                            final @NonNull Response<VenueSearchResponse> response) {
-                        mVenues = new LinkedHashMap<>();
-                        for (final Venue venue : response.body().getVenueList()) {
-                            mVenues.put(venue.getId(), venue);
-                        }
-
-                        notifySearchListeners();
-                    }
-
-                    @Override
-                    public void onFailure(Call<VenueSearchResponse> call, Throwable t) {
-                        Log.e(TAG, "Failed to fetch venue search", t);
-                    }
-                });
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> {
+                            mVenues = new LinkedHashMap<>();
+                            for (final Venue venue : result.getVenueList()) {
+                                mVenues.put(venue.getId(), venue);
+                            }
+                            notifySearchListeners();
+                        },
+                        error -> Log.e(TAG, "Failed to fetch venue search", error)
+                );
     }
 
     public void checkInToVenue(final @NonNull String venueId) {
