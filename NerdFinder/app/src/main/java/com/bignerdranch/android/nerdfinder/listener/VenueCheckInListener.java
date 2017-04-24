@@ -1,5 +1,5 @@
 package com.bignerdranch.android.nerdfinder.listener;
 
-public interface VenueCheckInListener {
+public interface VenueCheckInListener extends AuthenticationListener {
     void onVenueCheckInFinished();
 }

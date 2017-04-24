@@ -22,9 +22,8 @@ public class ExpiredTokenDialogFragment extends DialogFragment {
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int i) {
-                                Intent intent = new Intent(getContext(),
-                                        AuthenticationActivity.class);
-                                startActivity(intent);
+                                startActivity(
+                                        new Intent(getContext(), AuthenticationActivity.class));
                             }
                         })
                 .setNegativeButton(android.R.string.cancel, null)

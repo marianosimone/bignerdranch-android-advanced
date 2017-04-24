@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.bignerdranch.android.nerdfinder.exception.UnauthorizedException;
 import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
@@ -14,6 +15,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -93,6 +95,7 @@ public class DataManager {
 
             final OkHttpClient authenticatedClient = new OkHttpClient.Builder()
                     .addInterceptor(loggingInterceptor)
+                    .addInterceptor(sAuthorizationInterceptor)
                     .addInterceptor(sAuthenticatedRequestInterceptor)
                     .build();
             final Retrofit authenticatedRetrofit = new Retrofit.Builder()
@@ -153,8 +156,18 @@ public class DataManager {
             @Override
             public void onFailure(Call<Object> call, Throwable t) {
                 Log.e(TAG, "Failed to check in to venue", t);
+                if (t instanceof UnauthorizedException) {
+                    sTokenStore.setAccessToken(null);
+                    notifyCheckInListenersTokenExpired();
+                }
             }
         });
+    }
+
+    private void notifyCheckInListenersTokenExpired() {
+        for (VenueCheckInListener listener : mCheckInListenerList) {
+            listener.onTokenExpired();
+        }
     }
 
     public void addVenueSearchListener(VenueSearchListener listener) {
@@ -214,6 +227,17 @@ public class DataManager {
                     .url(url)
                     .build();
             return chain.proceed(request);
+        }
+    };
+
+    private static Interceptor sAuthorizationInterceptor = new Interceptor() {
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            okhttp3.Response response = chain.proceed(chain.request());
+            if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                throw new UnauthorizedException();
+            }
+            return response;
         }
     };
 

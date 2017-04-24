@@ -21,16 +21,17 @@ import static android.view.View.VISIBLE;
 
 public class VenueDetailFragment extends Fragment implements VenueCheckInListener {
     private static final String ARG_VENUE_ID = "VenueDetailFragment.VenueId";
+    private static final String EXPIRED_DIALOG = "expired_dialog";
 
+    private DataManager mDataManager;
     private String mVenueId;
     private Venue mVenue;
+
     private TextView mVenueNameTextView;
     private TextView mVenueAddressTextView;
     private TextView mVenueCategoriesTextView;
     private TextView mNumberOfCheckInsTextView;
-
     private Button mCheckInButton;
-    private DataManager mDataManager;
 
     public static VenueDetailFragment newInstance(String venueId) {
         VenueDetailFragment fragment = new VenueDetailFragment();
@@ -107,5 +108,12 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         Toast
                 .makeText(getContext(), R.string.successful_check_in_message, Toast.LENGTH_SHORT)
                 .show();
+    }
+
+    @Override
+    public void onTokenExpired() {
+        mCheckInButton.setVisibility(GONE);
+        final ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
+        dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
     }
 }
