@@ -2,7 +2,6 @@ package com.bignerdranch.android.nerdfinder.controller;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -19,13 +18,8 @@ public class ExpiredTokenDialogFragment extends DialogFragment {
                 .setTitle(R.string.expired_token_dialog_title)
                 .setMessage(R.string.expired_token_dialog_message)
                 .setPositiveButton(android.R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int i) {
-                                startActivity(
-                                        new Intent(getContext(), AuthenticationActivity.class));
-                            }
-                        })
+                        (dialog, i) -> startActivity(
+                                new Intent(getContext(), AuthenticationActivity.class)))
                 .setNegativeButton(android.R.string.cancel, null)
                 .create();
     }
