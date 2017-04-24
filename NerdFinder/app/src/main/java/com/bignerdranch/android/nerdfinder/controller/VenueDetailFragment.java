@@ -32,6 +32,7 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
     private TextView mVenueCategoriesTextView;
     private TextView mNumberOfCheckInsTextView;
     private Button mCheckInButton;
+    private View mCheckInButtonProgressBar;
 
     public static VenueDetailFragment newInstance(String venueId) {
         VenueDetailFragment fragment = new VenueDetailFragment();
@@ -56,6 +57,7 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         mVenueCategoriesTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_venue_categories);
         mNumberOfCheckInsTextView = (TextView) view.findViewById(R.id.fragment_venue_detail_number_of_check_ins);
         mCheckInButton = (Button) view.findViewById(R.id.fragment_venue_detail_check_in_button);
+        mCheckInButtonProgressBar = view.findViewById(R.id.fragment_venue_detail_check_in_button_progress);
         return view;
     }
 
@@ -99,6 +101,8 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
     private View.OnClickListener mCheckInClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
+            mCheckInButton.setVisibility(GONE);
+            mCheckInButtonProgressBar.setVisibility(VISIBLE);
             mDataManager.checkInToVenue(mVenueId);
         }
     };
@@ -108,11 +112,14 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         Toast
                 .makeText(getContext(), R.string.successful_check_in_message, Toast.LENGTH_SHORT)
                 .show();
+        mCheckInButton.setVisibility(GONE);
+        mCheckInButtonProgressBar.setVisibility(GONE);
     }
 
     @Override
     public void onTokenExpired() {
         mCheckInButton.setVisibility(GONE);
+        mCheckInButtonProgressBar.setVisibility(GONE);
         final ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
         dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
     }

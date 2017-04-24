@@ -33,12 +33,27 @@
         android:layout_height="wrap_content"
         tools:text="5 check-ins"/>
 
-    <Button
-        android:id="@+id/fragment_venue_detail_check_in_button"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="@string/check_in_button"
-        android:textSize="16sp"/>
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/fragment_venue_detail_check_in_button"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/action_button_height"
+            android:layout_gravity="center"
+            android:text="@string/check_in_button"
+            android:textSize="16sp"/>
+
+        <ProgressBar
+            android:id="@+id/fragment_venue_detail_check_in_button_progress"
+            android:layout_width="@dimen/action_button_height"
+            android:layout_height="@dimen/action_button_height"
+            android:layout_centerInParent="true"
+            android:padding="4dp"
+            />
+
+    </RelativeLayout>
 
 </LinearLayout>
