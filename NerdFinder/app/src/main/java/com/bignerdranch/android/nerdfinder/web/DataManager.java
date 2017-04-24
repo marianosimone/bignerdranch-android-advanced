@@ -2,8 +2,10 @@ package com.bignerdranch.android.nerdfinder.web;
 
 import android.content.Context;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.Venue;
@@ -13,7 +15,9 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
@@ -43,6 +47,8 @@ public class DataManager {
 
     private static final String FOURSQUARE_MODE = "foursquare";
 
+    private static final String SWARM_MODE = "swarm";
+
     private static final String TEST_LAT_LNG = "33.759,-84.332";
 
     private static final String OAUTH_ENDPOINT
@@ -51,16 +57,19 @@ public class DataManager {
     public static final String OAUTH_REDIRECT_URI
             = "http://www.bignerdranch.com";
 
-    private List<Venue> mVenueList;
+    private Map<String, Venue> mVenues;
 
     private final List<VenueSearchListener> mSearchListenerList;
 
+    private final ArrayList<VenueCheckInListener> mCheckInListenerList;
+
     private static DataManager sDataManager;
 
-    private final TokenStore mTokenStore;
+    private static TokenStore sTokenStore;
 
     private final Retrofit mRetrofit;
 
+    private final Retrofit mAuthenticatedRetrofit;
 
     public static DataManager get(Context context) {
         if (sDataManager == null) {
@@ -82,20 +91,31 @@ public class DataManager {
                     .client(client)
                     .build();
 
+            final OkHttpClient authenticatedClient = new OkHttpClient.Builder()
+                    .addInterceptor(loggingInterceptor)
+                    .addInterceptor(sAuthenticatedRequestInterceptor)
+                    .build();
+            final Retrofit authenticatedRetrofit = new Retrofit.Builder()
+                    .baseUrl(FOURSQUARE_ENDPOINT)
+                    .client(authenticatedClient)
+                    .addConverterFactory(GsonConverterFactory.create(gson))
+                    .build();
+
             final TokenStore tokenStore = TokenStore.get(context);
-            sDataManager = new DataManager(tokenStore, retrofit);
+            sDataManager = new DataManager(tokenStore, retrofit, authenticatedRetrofit);
         }
         return sDataManager;
     }
 
-    private DataManager() {
-        throw new InstantiationError("Default constructor called for singleton");
-    }
-
-    private DataManager(TokenStore tokenStore, Retrofit retrofit) {
-        mTokenStore = tokenStore;
+    private DataManager(
+            final @NonNull TokenStore tokenStore,
+            final @NonNull Retrofit retrofit,
+            final @NonNull Retrofit authenticatedRetrofit) {
+        sTokenStore = tokenStore;
         mRetrofit = retrofit;
+        mAuthenticatedRetrofit = authenticatedRetrofit;
         mSearchListenerList = new ArrayList<>();
+        mCheckInListenerList = new ArrayList<>();
     }
 
     public void fetchVenueSearch() {
@@ -104,9 +124,13 @@ public class DataManager {
                 .enqueue(new Callback<VenueSearchResponse>() {
                     @Override
                     public void onResponse(
-                            Call<VenueSearchResponse> call,
-                            Response<VenueSearchResponse> response) {
-                        mVenueList = response.body().getVenueList();
+                            final @NonNull Call<VenueSearchResponse> call,
+                            final @NonNull Response<VenueSearchResponse> response) {
+                        mVenues = new LinkedHashMap<>();
+                        for (final Venue venue : response.body().getVenueList()) {
+                            mVenues.put(venue.getId(), venue);
+                        }
+
                         notifySearchListeners();
                     }
 
@@ -115,6 +139,22 @@ public class DataManager {
                         Log.e(TAG, "Failed to fetch venue search", t);
                     }
                 });
+    }
+
+    public void checkInToVenue(final @NonNull String venueId) {
+        final VenueInterface venueInterface =
+                mAuthenticatedRetrofit.create(VenueInterface.class);
+        venueInterface.venueCheckIn(venueId).enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+                notifyCheckInListeners();
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
+                Log.e(TAG, "Failed to check in to venue", t);
+            }
+        });
     }
 
     public void addVenueSearchListener(VenueSearchListener listener) {
@@ -126,8 +166,23 @@ public class DataManager {
     }
 
     private void notifySearchListeners() {
+        final List<Venue> venues = new ArrayList<>(mVenues.values());
         for (VenueSearchListener listener : mSearchListenerList) {
-            listener.onVenueSearchFinished(mVenueList);
+            listener.onVenueSearchFinished(venues);
+        }
+    }
+
+    public void addVenueCheckInListener(VenueCheckInListener listener) {
+        mCheckInListenerList.add(listener);
+    }
+
+    public void removeVenueCheckInListener(VenueCheckInListener listener) {
+        mCheckInListenerList.remove(listener);
+    }
+
+    private void notifyCheckInListeners() {
+        for (VenueCheckInListener listener : mCheckInListenerList) {
+            listener.onVenueCheckInFinished();
         }
     }
 
@@ -147,6 +202,21 @@ public class DataManager {
         }
     };
 
+    private static Interceptor sAuthenticatedRequestInterceptor = new Interceptor() {
+        @Override
+        public okhttp3.Response intercept(Chain chain) throws IOException {
+            HttpUrl url = chain.request().url().newBuilder()
+                    .addQueryParameter("oauth_token", sTokenStore.getAccessToken())
+                    .addQueryParameter("v", FOURSQUARE_VERSION)
+                    .addQueryParameter("m", SWARM_MODE)
+                    .build();
+            Request request = chain.request().newBuilder()
+                    .url(url)
+                    .build();
+            return chain.proceed(request);
+        }
+    };
+
     public String getAuthenticationUrl() {
         return Uri.parse(OAUTH_ENDPOINT).buildUpon()
                 .appendQueryParameter("client_id", CLIENT_ID)
@@ -154,5 +224,9 @@ public class DataManager {
                 .appendQueryParameter("redirect_uri", OAUTH_REDIRECT_URI)
                 .build()
                 .toString();
+    }
+
+    public Venue getVenue(final @NonNull String venueId) {
+        return mVenues.containsKey(venueId) ? mVenues.get(venueId) : null;
     }
 }

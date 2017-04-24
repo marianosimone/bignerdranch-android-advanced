@@ -8,12 +8,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bignerdranch.android.nerdfinder.R;
+import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.Venue;
+import com.bignerdranch.android.nerdfinder.web.DataManager;
 
-public class VenueDetailFragment extends Fragment {
+public class VenueDetailFragment extends Fragment implements VenueCheckInListener {
     private static final String ARG_VENUE_ID = "VenueDetailFragment.VenueId";
 
     private String mVenueId;
@@ -22,6 +25,7 @@ public class VenueDetailFragment extends Fragment {
     private TextView mVenueAddressTextView;
     private Button mCheckInButton;
     private TokenStore mTokenStore;
+    private DataManager mDataManager;
 
     public static VenueDetailFragment newInstance(String venueId) {
         VenueDetailFragment fragment = new VenueDetailFragment();
@@ -53,21 +57,39 @@ public class VenueDetailFragment extends Fragment {
     public void onStart() {
         super.onStart();
         mVenueId = getArguments().getString(ARG_VENUE_ID);
+        mDataManager = DataManager.get(getContext());
+        mDataManager.addVenueCheckInListener(this);
+        mVenue = mDataManager.getVenue(mVenueId);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        mVenueNameTextView.setText(mVenue.getName());
+        mVenueAddressTextView.setText(mVenue.getFormattedAddress());
+        if (mTokenStore.getAccessToken() != null) {
+            mCheckInButton.setVisibility(View.VISIBLE);
+            mCheckInButton.setOnClickListener(mCheckInClickListener);
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        mDataManager.removeVenueCheckInListener(this);
     }
 
     private View.OnClickListener mCheckInClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
+            mDataManager.checkInToVenue(mVenueId);
         }
     };
+
+    @Override
+    public void onVenueCheckInFinished() {
+        Toast.makeText(getContext(), R.string.successful_check_in_message,
+                Toast.LENGTH_SHORT)
+                .show();
+    }
 }
