@@ -14,7 +14,6 @@ import com.bignerdranch.android.nerdfinder.model.VenueSearchResponse;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,7 +29,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class DataManager {
 
@@ -102,6 +104,7 @@ public class DataManager {
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .client(authenticatedClient)
                     .addConverterFactory(GsonConverterFactory.create(gson))
+                    .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                     .build();
 
             final TokenStore tokenStore = TokenStore.get(context);
@@ -147,21 +150,13 @@ public class DataManager {
     public void checkInToVenue(final @NonNull String venueId) {
         final VenueInterface venueInterface =
                 mAuthenticatedRetrofit.create(VenueInterface.class);
-        venueInterface.venueCheckIn(venueId).enqueue(new Callback<Object>() {
-            @Override
-            public void onResponse(Call<Object> call, Response<Object> response) {
-                notifyCheckInListeners();
-            }
-
-            @Override
-            public void onFailure(Call<Object> call, Throwable t) {
-                Log.e(TAG, "Failed to check in to venue", t);
-                if (t instanceof UnauthorizedException) {
-                    sTokenStore.setAccessToken(null);
-                    notifyCheckInListenersTokenExpired();
-                }
-            }
-        });
+        venueInterface.venueCheckIn(venueId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        result -> notifyCheckInListeners(),
+                        this::handleCheckInException
+                );
     }
 
     private void notifyCheckInListenersTokenExpired() {
@@ -199,46 +194,37 @@ public class DataManager {
         }
     }
 
-    private static Interceptor sRequestInterceptor = new Interceptor() {
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            final HttpUrl url = chain.request().url().newBuilder()
-                    .addQueryParameter("client_id", CLIENT_ID)
-                    .addQueryParameter("client_secret", CLIENT_SECRET)
-                    .addQueryParameter("v", FOURSQUARE_VERSION)
-                    .addQueryParameter("m", FOURSQUARE_MODE)
-                    .build();
-            final Request request = chain.request().newBuilder()
-                    .url(url)
-                    .build();
-            return chain.proceed(request);
-        }
+    private static Interceptor sRequestInterceptor = chain -> {
+        final HttpUrl url = chain.request().url().newBuilder()
+                .addQueryParameter("client_id", CLIENT_ID)
+                .addQueryParameter("client_secret", CLIENT_SECRET)
+                .addQueryParameter("v", FOURSQUARE_VERSION)
+                .addQueryParameter("m", FOURSQUARE_MODE)
+                .build();
+        final Request request = chain.request().newBuilder()
+                .url(url)
+                .build();
+        return chain.proceed(request);
     };
 
-    private static Interceptor sAuthenticatedRequestInterceptor = new Interceptor() {
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            HttpUrl url = chain.request().url().newBuilder()
-                    .addQueryParameter("oauth_token", sTokenStore.getAccessToken())
-                    .addQueryParameter("v", FOURSQUARE_VERSION)
-                    .addQueryParameter("m", SWARM_MODE)
-                    .build();
-            Request request = chain.request().newBuilder()
-                    .url(url)
-                    .build();
-            return chain.proceed(request);
-        }
+    private static Interceptor sAuthenticatedRequestInterceptor = chain -> {
+        HttpUrl url = chain.request().url().newBuilder()
+                .addQueryParameter("oauth_token", sTokenStore.getAccessToken())
+                .addQueryParameter("v", FOURSQUARE_VERSION)
+                .addQueryParameter("m", SWARM_MODE)
+                .build();
+        Request request = chain.request().newBuilder()
+                .url(url)
+                .build();
+        return chain.proceed(request);
     };
 
-    private static Interceptor sAuthorizationInterceptor = new Interceptor() {
-        @Override
-        public okhttp3.Response intercept(Chain chain) throws IOException {
-            okhttp3.Response response = chain.proceed(chain.request());
-            if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                throw new UnauthorizedException();
-            }
-            return response;
+    private static Interceptor sAuthorizationInterceptor = chain -> {
+        okhttp3.Response response = chain.proceed(chain.request());
+        if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            throw new UnauthorizedException();
         }
+        return response;
     };
 
     public String getAuthenticationUrl() {
@@ -256,5 +242,12 @@ public class DataManager {
 
     public boolean isLoggedIn() {
         return sTokenStore.getAccessToken() != null;
+    }
+
+    private void handleCheckInException(Throwable error) {
+        if (error instanceof UnauthorizedException) {
+            sTokenStore.setAccessToken(null);
+            notifyCheckInListenersTokenExpired();
+        }
     }
 }
