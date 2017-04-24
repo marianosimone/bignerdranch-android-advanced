@@ -49,17 +49,16 @@ public class VenueView extends LinearLayout {
     }
 
     public void setCategory(final @Nullable Category category) {
-        // TODO: Tint icon (http://developerbits.blogspot.com/2015/05/android-dynamically-coloring-images.html ?)
-        // TODO: Use a default image when non available
-        if (category != null) {
-            mCategoryIcon.setContentDescription(category.getName());
-            Picasso.with(getContext())
-                    .load(category.getIcon().getUrl())
-                    .resize(mCategoryIconSize, mCategoryIconSize)
-                    .into(mCategoryIcon);
-            mCategoryIcon.setVisibility(VISIBLE);
-        } else {
-            mCategoryIcon.setVisibility(INVISIBLE);
-        }
+        final String iconUrl = category != null
+                ? category.getIcon().getUrl()
+                : null;
+        mCategoryIcon.setContentDescription(category != null ? category.getName() : null);
+        Picasso.with(getContext())
+                .load(iconUrl)
+                .placeholder(R.drawable.default_icon)
+                .error(R.drawable.default_icon)
+                .resize(mCategoryIconSize, mCategoryIconSize)
+                .into(mCategoryIcon);
+        mCategoryIcon.setVisibility(VISIBLE);
     }
 }
