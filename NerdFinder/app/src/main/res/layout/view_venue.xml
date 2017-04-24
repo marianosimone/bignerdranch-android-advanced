@@ -1,13 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+       xmlns:tools="http://schemas.android.com/tools">
 
-    <TextView android:id="@+id/view_venue_list_VenueTitleTextView"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:textSize="20sp"/>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <TextView android:id="@+id/view_venue_list_VenueLocationTextView"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:textSize="16sp"/>
+        <ImageView
+            android:id="@+id/view_venue_list_VenueIconImageView"
+            android:layout_width="@dimen/view_venue_list_VenueIconSize"
+            android:layout_height="@dimen/view_venue_list_VenueIconSize"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center"
+            android:layout_marginEnd="4dp"
+            android:layout_marginStart="4dp"
+            tools:background="@color/colorAccent"
+            tools:ignore="ContentDescription"/>
+
+        <TextView
+            android:id="@+id/view_venue_list_VenueTitleTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/view_venue_list_VenueIconImageView"
+            android:maxLines="1"
+            android:textSize="20sp"
+            tools:text="Venue Name"/>
+
+        <TextView
+            android:id="@+id/view_venue_list_VenueLocationTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/view_venue_list_VenueTitleTextView"
+            android:layout_toEndOf="@id/view_venue_list_VenueIconImageView"
+            android:maxLines="1"
+            android:textSize="16sp"
+            tools:text="Venue Location"/>
+
+    </RelativeLayout>
+
 </merge>

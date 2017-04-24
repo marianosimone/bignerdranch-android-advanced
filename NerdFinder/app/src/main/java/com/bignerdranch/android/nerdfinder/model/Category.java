@@ -15,4 +15,16 @@ public class Category {
 
     @SerializedName("primary")
     private boolean mPrimary;
+
+    public String getName() {
+        return mName;
+    }
+
+    boolean isPrimary() {
+        return mPrimary;
+    }
+
+    public Icon getIcon() {
+        return mIcon;
+    }
 }
