@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 
 import com.bignerdranch.android.nerdmart.model.DataStore;
 import com.bignerdranch.android.nerdmart.model.service.NerdMartServiceManager;
+import com.bignerdranch.android.nerdmart.viewmodel.NerdMartViewModel;
 import com.bignerdranch.android.nerdmartservice.service.NerdMartService;
 import com.bignerdranch.android.nerdmartservice.service.NerdMartServiceInterface;
 
@@ -29,9 +30,9 @@ class NerdMartApplicationModule {
     }
 
     @Provides
+    @Singleton
     NerdMartServiceManager provideNerdMartServiceManager(
-            NerdMartServiceInterface serviceInterface
-            , DataStore dataStore
+            NerdMartServiceInterface serviceInterface, DataStore dataStore
     ) {
         return new NerdMartServiceManager(serviceInterface, dataStore);
     }
@@ -40,5 +41,11 @@ class NerdMartApplicationModule {
     @Singleton
     DataStore provideDataStore() {
         return new DataStore();
+    }
+
+    @Provides
+    NerdMartViewModel provideNerdMartViewModel(final @NonNull DataStore dataStore) {
+        return new NerdMartViewModel(mApplicationContext,
+                dataStore.getCachedCart(), dataStore.getCachedUser());
     }
 }

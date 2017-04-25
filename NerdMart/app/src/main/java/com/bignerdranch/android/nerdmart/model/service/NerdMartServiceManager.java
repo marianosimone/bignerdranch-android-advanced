@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 
 import com.bignerdranch.android.nerdmart.model.DataStore;
 import com.bignerdranch.android.nerdmartservice.service.NerdMartServiceInterface;
+import com.bignerdranch.android.nerdmartservice.service.payload.Cart;
 import com.bignerdranch.android.nerdmartservice.service.payload.Product;
 
 import java.util.UUID;
@@ -54,5 +55,22 @@ public class NerdMartServiceManager {
                 .doOnNext(mDataStore::setCachedProducts)
                 .flatMap(Observable::from)
                 .compose(applySchedulers());
+    }
+
+    public Observable<Cart> getCart() {
+        return getToken().flatMap(mServiceInterface::fetchUserCart)
+                .doOnNext(mDataStore::setCachedCart)
+                .compose(applySchedulers());
+    }
+
+    public Observable<Boolean> postProductToCart(final @NonNull Product product) {
+        return getToken()
+                .flatMap(uuid -> mServiceInterface.addProductToCart(uuid, product))
+                .compose(applySchedulers());
+    }
+
+    public Observable<Boolean> signOut() {
+        mDataStore.clearCache();
+        return mServiceInterface.signout();
     }
 }

@@ -8,13 +8,16 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import com.bignerdranch.android.nerdmart.databinding.FragmentProductsBinding;
 import com.bignerdranch.android.nerdmartservice.service.payload.Product;
 
 import java.util.Collections;
 
-import timber.log.Timber;
+import rx.Observable;
+import rx.Subscription;
+import rx.schedulers.Schedulers;
 
 public class ProductsFragment extends NerdMartAbstractFragment {
 
@@ -60,6 +63,24 @@ public class ProductsFragment extends NerdMartAbstractFragment {
                         }));
     }
 
-    private void postProductToCart(final @NonNull Product product){
+    private void postProductToCart(final @NonNull Product product) {
+        final Observable<Boolean> cartSuccessObservable = mNerdMartServiceManager
+                .postProductToCart(product)
+                .compose(loadingTransformer())
+                .cache();
+        final Subscription cartUpdateNotificationObservable = cartSuccessObservable
+                .subscribe(aBoolean -> {
+                    final int message = aBoolean ? R.string.product_add_success_message :
+                            R.string.product_add_failure_message;
+                    Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                });
+        addSubscription(cartUpdateNotificationObservable);
+        addSubscription(cartSuccessObservable.filter(aBoolean -> aBoolean)
+                .subscribeOn(Schedulers.newThread())
+                .flatMap(aBoolean -> mNerdMartServiceManager.getCart())
+                .subscribe(cart -> {
+                    ((NerdMartAbstractActivity) getActivity()).updateCartStatus(cart);
+                    updateUI();
+                }));
     }
 }

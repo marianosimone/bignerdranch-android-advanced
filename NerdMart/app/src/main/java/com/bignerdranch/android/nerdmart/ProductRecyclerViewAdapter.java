@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import com.bignerdranch.android.nerdmart.databinding.ViewProductRowBinding;
+import com.bignerdranch.android.nerdmart.viewmodel.ProductViewModel;
 import com.bignerdranch.android.nerdmartservice.service.payload.Product;
 
 import java.util.List;
@@ -65,9 +66,10 @@ class ProductRecyclerViewAdapter
         }
 
         private void bindHolder(Product product, int position) {
-            mDataBinding.viewProductRowTitle.setText(product.toString());
             mDataBinding.setBuyButtonClickListener(v ->
                     mAddProductClickEvent.onProductAddClick(product));
+            mDataBinding.setProductViewModel(
+                    new ProductViewModel(mContext, product, position));
         }
     }
 }
