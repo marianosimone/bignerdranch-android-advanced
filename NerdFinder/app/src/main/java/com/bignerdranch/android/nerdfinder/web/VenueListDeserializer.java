@@ -9,7 +9,7 @@ import com.google.gson.JsonParseException;
 
 import java.lang.reflect.Type;
 
-class VenueListDeserializer implements JsonDeserializer<VenueSearchResponse> {
+public class VenueListDeserializer implements JsonDeserializer<VenueSearchResponse> {
 
     @Override
     public VenueSearchResponse deserialize(

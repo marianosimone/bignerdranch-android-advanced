@@ -28,6 +28,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -58,15 +59,19 @@ public class DataManager {
     public static final String OAUTH_REDIRECT_URI
             = "http://www.bignerdranch.com";
 
+    protected static DataManager sDataManager;
+
+    private static TokenStore sTokenStore;
+
     private Map<String, Venue> mVenues;
 
     private final List<VenueSearchListener> mSearchListenerList;
 
     private final ArrayList<VenueCheckInListener> mCheckInListenerList;
 
-    private static DataManager sDataManager;
+    private final Scheduler mSubscribeOnScheduler;
 
-    private static TokenStore sTokenStore;
+    private final Scheduler mObserveOnScheduler;
 
     private final Retrofit mRetrofit;
 
@@ -112,7 +117,7 @@ public class DataManager {
         return sDataManager;
     }
 
-    private DataManager(
+    DataManager(
             final @NonNull TokenStore tokenStore,
             final @NonNull Retrofit retrofit,
             final @NonNull Retrofit authenticatedRetrofit) {
@@ -121,13 +126,15 @@ public class DataManager {
         mAuthenticatedRetrofit = authenticatedRetrofit;
         mSearchListenerList = new ArrayList<>();
         mCheckInListenerList = new ArrayList<>();
+        mSubscribeOnScheduler = getSubscribeOnScheduler();
+        mObserveOnScheduler = getObserveOnScheduler();
     }
 
     public void fetchVenueSearch() {
         final VenueInterface venueInterface = mRetrofit.create(VenueInterface.class);
         venueInterface.venueSearch(TEST_LAT_LNG)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(mSubscribeOnScheduler)
+                .observeOn(mObserveOnScheduler)
                 .subscribe(
                         result -> {
                             mVenues = new LinkedHashMap<>();
@@ -144,8 +151,8 @@ public class DataManager {
         final VenueInterface venueInterface =
                 mAuthenticatedRetrofit.create(VenueInterface.class);
         venueInterface.venueCheckIn(venueId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
+                .subscribeOn(mSubscribeOnScheduler)
+                .observeOn(mObserveOnScheduler)
                 .subscribe(
                         result -> notifyCheckInListeners(),
                         this::handleCheckInException
@@ -212,7 +219,7 @@ public class DataManager {
         return chain.proceed(request);
     };
 
-    private static Interceptor sAuthorizationInterceptor = chain -> {
+    public static Interceptor sAuthorizationInterceptor = chain -> {
         okhttp3.Response response = chain.proceed(chain.request());
         if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
             throw new UnauthorizedException();
@@ -242,5 +249,13 @@ public class DataManager {
             sTokenStore.setAccessToken(null);
             notifyCheckInListenersTokenExpired();
         }
+    }
+
+    Scheduler getSubscribeOnScheduler() {
+        return Schedulers.io();
+    }
+
+    Scheduler getObserveOnScheduler() {
+        return AndroidSchedulers.mainThread();
     }
 }
