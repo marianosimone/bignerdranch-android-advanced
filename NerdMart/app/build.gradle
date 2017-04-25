@@ -29,17 +29,31 @@ android {
     }
 }
 
+android.applicationVariants.all {
+    def aptOutputDir = new File(buildDir, "generated/source/apt/${it.unitTestVariant.dirName}")
+    it.unitTestVariant.addJavaSourceFoldersToModel(aptOutputDir)
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile(name: 'nerdmartservice', ext: 'aar')
     compile 'com.jakewharton.timber:timber:3.1.0'
     compile 'com.android.support:recyclerview-v7:25.3.1'
-    compile 'com.google.dagger:dagger:2.0.1'
+    compile 'com.google.dagger:dagger:2.10'
     provided 'javax.annotation:jsr250-api:1.0'
     compile 'io.reactivex:rxjava:1.0.13'
     compile 'io.reactivex:rxandroid:1.2.0'
 
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.0.1'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.10'
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'com.squareup.assertj:assertj-android:1.1.0'
+    testCompile 'org.robolectric:robolectric:3.1.2'
+    testCompile 'com.android.support:support-annotations:25.3.1'
+    testCompile 'com.google.dagger:dagger:2.10'
+    testProvided 'javax.annotation:jsr250-api:1.0'
+
+    testAnnotationProcessor 'com.google.dagger:dagger-compiler:2.10'
+
 }

@@ -10,10 +10,13 @@ import com.bignerdranch.android.nerdmartservice.service.payload.Product;
 import java.util.UUID;
 
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
+import rx.Scheduler;
 import rx.schedulers.Schedulers;
 
 public class NerdMartServiceManager {
+
+    @NonNull
+    private final Scheduler mScheduler;
 
     @NonNull
     private final NerdMartServiceInterface mServiceInterface;
@@ -21,17 +24,22 @@ public class NerdMartServiceManager {
     @NonNull
     private final DataStore mDataStore;
 
+    @NonNull
+    private final Observable.Transformer<Observable, Observable>
+            mSchedulersTransformer;
+
     public NerdMartServiceManager(
             final @NonNull NerdMartServiceInterface serviceInterface,
-            final @NonNull DataStore dataStore) {
+            final @NonNull DataStore dataStore,
+            final @NonNull Scheduler scheduler) {
         mServiceInterface = serviceInterface;
         mDataStore = dataStore;
+        mScheduler = scheduler;
+        mSchedulersTransformer = observable ->
+                observable
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(mScheduler);
     }
-
-    private final Observable.Transformer<Observable, Observable>
-            mSchedulersTransformer = observable ->
-            observable.subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread());
 
     @SuppressWarnings("unchecked")
     private <T> Observable.Transformer<T, T> applySchedulers() {

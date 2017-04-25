@@ -12,7 +12,7 @@ import dagger.Component;
         NerdMartCommonModule.class,
         NerdMartServiceModule.class
 })
-public interface NerdMartComponent extends NerdMartGraph {
+public interface TestNerdMartComponent extends TestNerdMartGraph {
 
     final class Initializer {
 
@@ -21,7 +21,7 @@ public interface NerdMartComponent extends NerdMartGraph {
         }
 
         public static NerdMartGraph init(NerdMartApplication app) {
-            return DaggerNerdMartComponent.builder()
+            return DaggerTestNerdMartComponent.builder()
                     .nerdMartApplicationModule(new NerdMartApplicationModule(app))
                     .build();
         }
