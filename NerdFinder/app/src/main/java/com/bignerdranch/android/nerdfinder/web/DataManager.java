@@ -13,20 +13,19 @@ import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.Venue;
 import com.bignerdranch.android.nerdfinder.model.VenueSearchResponse;
+import com.bignerdranch.android.nerdfinder.web.interceptor.AuthorizationInterceptor;
+import com.bignerdranch.android.nerdfinder.web.interceptor.FoursquareAuthenticatedInterceptor;
+import com.bignerdranch.android.nerdfinder.web.interceptor.FoursquareRequestInterceptor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import okhttp3.HttpUrl;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
@@ -36,24 +35,13 @@ import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
+import static com.bignerdranch.android.nerdfinder.web.FoursquareConfig.CLIENT_ID;
+import static com.bignerdranch.android.nerdfinder.web.FoursquareConfig.FOURSQUARE_ENDPOINT;
+
 public class DataManager {
 
     private static final String TAG = "DataManager";
 
-    private static final String FOURSQUARE_ENDPOINT = "https://api.foursquare.com/v2/";
-
-    private static final String CLIENT_ID
-            = "JKP02TJ5V35Y501TNE0XIKB4DSAR1TIDCOJJQAGLUMJDG1DS";
-
-    // Not that secret... but there's not much you can do with it, so... here it is :P
-    private static final String CLIENT_SECRET
-            = "3Z3NISRYLLQJTJXIXLJCRTXA41KHAY35ZHWM40NK0U1HHBLN";
-
-    private static final String FOURSQUARE_VERSION = "20150406";
-
-    private static final String FOURSQUARE_MODE = "foursquare";
-
-    private static final String SWARM_MODE = "swarm";
 
     private static final String TEST_LAT_LNG = "33.759,-84.332";
 
@@ -93,7 +81,7 @@ public class DataManager {
             loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
 
             final OkHttpClient client = new OkHttpClient.Builder()
-                    .addInterceptor(sRequestInterceptor)
+                    .addInterceptor(new FoursquareRequestInterceptor())
                     .addInterceptor(loggingInterceptor)
                     .build();
 
@@ -106,8 +94,8 @@ public class DataManager {
 
             final OkHttpClient authenticatedClient = new OkHttpClient.Builder()
                     .addInterceptor(loggingInterceptor)
-                    .addInterceptor(sAuthorizationInterceptor)
-                    .addInterceptor(sAuthenticatedRequestInterceptor)
+                    .addInterceptor(new AuthorizationInterceptor())
+                    .addInterceptor(new FoursquareAuthenticatedInterceptor(sTokenStore))
                     .build();
 
             final Retrofit authenticatedRetrofit = new Retrofit.Builder()
@@ -218,39 +206,6 @@ public class DataManager {
             listener.onVenueCheckInFinished();
         }
     }
-
-    private static Interceptor sRequestInterceptor = chain -> {
-        final HttpUrl url = chain.request().url().newBuilder()
-                .addQueryParameter("client_id", CLIENT_ID)
-                .addQueryParameter("client_secret", CLIENT_SECRET)
-                .addQueryParameter("v", FOURSQUARE_VERSION)
-                .addQueryParameter("m", FOURSQUARE_MODE)
-                .build();
-        final Request request = chain.request().newBuilder()
-                .url(url)
-                .build();
-        return chain.proceed(request);
-    };
-
-    private static Interceptor sAuthenticatedRequestInterceptor = chain -> {
-        HttpUrl url = chain.request().url().newBuilder()
-                .addQueryParameter("oauth_token", sTokenStore.getAccessToken())
-                .addQueryParameter("v", FOURSQUARE_VERSION)
-                .addQueryParameter("m", SWARM_MODE)
-                .build();
-        Request request = chain.request().newBuilder()
-                .url(url)
-                .build();
-        return chain.proceed(request);
-    };
-
-    public static Interceptor sAuthorizationInterceptor = chain -> {
-        okhttp3.Response response = chain.proceed(chain.request());
-        if (response.code() == HttpURLConnection.HTTP_UNAUTHORIZED) {
-            throw new UnauthorizedException();
-        }
-        return response;
-    };
 
     public String getAuthenticationUrl() {
         return Uri.parse(OAUTH_ENDPOINT).buildUpon()

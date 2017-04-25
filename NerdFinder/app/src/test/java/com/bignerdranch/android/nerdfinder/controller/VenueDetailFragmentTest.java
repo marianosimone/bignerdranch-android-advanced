@@ -13,6 +13,7 @@ import com.bignerdranch.android.nerdfinder.model.VenueSearchResponse;
 import com.bignerdranch.android.nerdfinder.web.DataManager;
 import com.bignerdranch.android.nerdfinder.web.TestDataManager;
 import com.bignerdranch.android.nerdfinder.web.VenueListDeserializer;
+import com.bignerdranch.android.nerdfinder.web.interceptor.AuthorizationInterceptor;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -83,7 +84,7 @@ public class VenueDetailFragmentTest {
                 .build();
         final OkHttpClient authenticatedClient = new OkHttpClient.Builder()
                 .dispatcher(new Dispatcher(executorService))
-                .addInterceptor(DataManager.sAuthorizationInterceptor)
+                .addInterceptor(new AuthorizationInterceptor())
                 .build();
         final Retrofit authenticatedRetrofit = new Retrofit.Builder()
                 .baseUrl(ENDPOINT)
