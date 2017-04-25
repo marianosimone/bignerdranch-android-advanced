@@ -1,6 +1,5 @@
 package com.bignerdranch.android.nerdfinder.controller;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
@@ -8,6 +7,7 @@ import android.widget.TextView;
 import com.bignerdranch.android.nerdfinder.BuildConfig;
 import com.bignerdranch.android.nerdfinder.R;
 import com.bignerdranch.android.nerdfinder.SynchronousExecutorService;
+import com.bignerdranch.android.nerdfinder.helper.NerdFinderSQLiteOpenHelper;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.VenueSearchResponse;
 import com.bignerdranch.android.nerdfinder.web.DataManager;
@@ -49,13 +49,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 public class VenueListFragmentTest {
 
     @Mock
-    private Context mContext;
+    private NerdFinderSQLiteOpenHelper mSQLiteOpenHelper;
 
     @Rule
     public WireMockRule mWireMockRule;
-    private String mEndpoint = "http://localhost:1111/";
-    private DataManager mDataManager;
-    private VenueListActivity mVenueListActivity;
+
+    private final static String ENDPOINT = "http://localhost:1111/";
+
     private VenueListFragment mVenueListFragment;
 
     public VenueListFragmentTest() {
@@ -74,20 +74,21 @@ public class VenueListFragmentTest {
                 .build();
 
         final Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(mEndpoint)
+                .baseUrl(ENDPOINT)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
         final TokenStore tokenStore = TokenStore.get(RuntimeEnvironment.application);
-        mDataManager = new TestDataManager(mContext, tokenStore, retrofit, retrofit);
+        final DataManager dataManager =
+                new TestDataManager(tokenStore, retrofit, retrofit, mSQLiteOpenHelper);
         stubFor(get(urlMatching("/venues/search.*"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBodyFile("search.json")));
-        mVenueListActivity = Robolectric.buildActivity(VenueListActivity.class)
-                .create().start().resume().get();
-        mVenueListFragment = (VenueListFragment) mVenueListActivity
+        final VenueListActivity venueListActivity =
+                Robolectric.buildActivity(VenueListActivity.class).create().start().resume().get();
+        mVenueListFragment = (VenueListFragment) venueListActivity
                 .getSupportFragmentManager()
                 .findFragmentById(R.id.fragmentContainer);
     }

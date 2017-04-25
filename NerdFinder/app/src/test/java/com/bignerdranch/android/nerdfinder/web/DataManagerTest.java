@@ -1,8 +1,7 @@
 package com.bignerdranch.android.nerdfinder.web;
 
-import android.content.Context;
-
 import com.bignerdranch.android.nerdfinder.exception.UnauthorizedException;
+import com.bignerdranch.android.nerdfinder.helper.NerdFinderSQLiteOpenHelper;
 import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
@@ -34,7 +33,7 @@ public class DataManagerTest {
     private DataManager mDataManager;
 
     @Mock
-    private Context mContext;
+    private NerdFinderSQLiteOpenHelper mSQLiteOpenHelper;
 
     @Mock
     private Retrofit mRetrofit;
@@ -63,7 +62,8 @@ public class DataManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        mDataManager = new TestDataManager(mContext, mTokenStore, mRetrofit, mAuthenticatedRetrofit);
+        mDataManager = new TestDataManager(
+                mTokenStore, mRetrofit, mAuthenticatedRetrofit, mSQLiteOpenHelper);
         when(mRetrofit.create(VenueInterface.class))
                 .thenReturn(mVenueInterface);
         when(mAuthenticatedRetrofit.create(VenueInterface.class))

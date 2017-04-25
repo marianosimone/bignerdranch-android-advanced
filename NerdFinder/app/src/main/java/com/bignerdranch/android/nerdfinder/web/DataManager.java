@@ -63,7 +63,7 @@ public class DataManager {
     public static final String OAUTH_REDIRECT_URI
             = "http://www.bignerdranch.com";
 
-    protected static DataManager sDataManager;
+    static DataManager sDataManager;
 
     private static TokenStore sTokenStore;
 
@@ -118,16 +118,20 @@ public class DataManager {
                     .build();
 
             final TokenStore tokenStore = TokenStore.get(context);
-            sDataManager = new DataManager(context, tokenStore, retrofit, authenticatedRetrofit);
+            sDataManager = new DataManager(
+                    tokenStore,
+                    retrofit,
+                    authenticatedRetrofit,
+                    new NerdFinderSQLiteOpenHelper(context));
         }
         return sDataManager;
     }
 
     DataManager(
-            final @NonNull Context context,
             final @NonNull TokenStore tokenStore,
             final @NonNull Retrofit retrofit,
-            final @NonNull Retrofit authenticatedRetrofit) {
+            final @NonNull Retrofit authenticatedRetrofit,
+            final @NonNull NerdFinderSQLiteOpenHelper sqLiteOpenHelper) {
         sTokenStore = tokenStore;
         mRetrofit = retrofit;
         mAuthenticatedRetrofit = authenticatedRetrofit;
@@ -135,7 +139,7 @@ public class DataManager {
         mCheckInListenerList = new ArrayList<>();
         mSubscribeOnScheduler = getSubscribeOnScheduler();
         mObserveOnScheduler = getObserveOnScheduler();
-        mSQLiteOpenHelper = new NerdFinderSQLiteOpenHelper(context);
+        mSQLiteOpenHelper = sqLiteOpenHelper;
     }
 
     public void fetchVenueSearch(final @NonNull String query) {
@@ -168,9 +172,7 @@ public class DataManager {
         venueInterface.venueCheckIn(venueId)
                 .subscribeOn(mSubscribeOnScheduler)
                 .observeOn(mObserveOnScheduler)
-                .doOnNext(result -> {
-                    mSQLiteOpenHelper.registerCheckIn(venueId);
-                })
+                .doOnNext(result -> mSQLiteOpenHelper.registerCheckIn(venueId))
                 .subscribe(
                         result -> notifyCheckInListeners(),
                         this::handleCheckInException

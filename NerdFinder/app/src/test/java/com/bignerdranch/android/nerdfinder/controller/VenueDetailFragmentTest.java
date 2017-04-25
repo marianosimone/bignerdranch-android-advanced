@@ -1,13 +1,13 @@
 package com.bignerdranch.android.nerdfinder.controller;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.widget.Button;
 
 import com.bignerdranch.android.nerdfinder.BuildConfig;
 import com.bignerdranch.android.nerdfinder.R;
 import com.bignerdranch.android.nerdfinder.SynchronousExecutorService;
+import com.bignerdranch.android.nerdfinder.helper.NerdFinderSQLiteOpenHelper;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
 import com.bignerdranch.android.nerdfinder.model.VenueSearchResponse;
 import com.bignerdranch.android.nerdfinder.web.DataManager;
@@ -51,14 +51,17 @@ import static org.hamcrest.core.Is.is;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 23, constants = BuildConfig.class)
 public class VenueDetailFragmentTest {
+
+    private static final String ENDPOINT = "http://localhost:1111/";
+
     @Mock
-    private Context mContext;
+    private NerdFinderSQLiteOpenHelper mSQLiteOpenHelper;
 
     @Rule
     public WireMockRule mWireMockRule = new WireMockRule(1111);
-    private String mEndpoint = "http://localhost:1111/";
-    private DataManager mDataManager;
+
     private VenueDetailActivity mVenueDetailActivity;
+
     private VenueDetailFragment mVenueDetailFragment;
 
     @Before
@@ -73,7 +76,7 @@ public class VenueDetailFragmentTest {
                 .dispatcher(new Dispatcher(executorService))
                 .build();
         final Retrofit basicRetrofit = new Retrofit.Builder()
-                .baseUrl(mEndpoint)
+                .baseUrl(ENDPOINT)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
@@ -83,19 +86,20 @@ public class VenueDetailFragmentTest {
                 .addInterceptor(DataManager.sAuthorizationInterceptor)
                 .build();
         final Retrofit authenticatedRetrofit = new Retrofit.Builder()
-                .baseUrl(mEndpoint)
+                .baseUrl(ENDPOINT)
                 .client(authenticatedClient)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
         final TokenStore tokenStore = TokenStore.get(RuntimeEnvironment.application);
         tokenStore.setAccessToken("bogus token for testing");
-        mDataManager = new TestDataManager(mContext, tokenStore, basicRetrofit, authenticatedRetrofit);
+        final DataManager dataManager = new TestDataManager(
+                tokenStore, basicRetrofit, authenticatedRetrofit, mSQLiteOpenHelper);
         stubFor(get(urlMatching("/venues/search.*"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBodyFile("search.json")));
-        mDataManager.fetchVenueSearch();
+        dataManager.fetchVenueSearch();
     }
 
     @Test
