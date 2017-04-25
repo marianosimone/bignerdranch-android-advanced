@@ -1,5 +1,7 @@
 package com.bignerdranch.android.nerdfinder.web;
 
+import android.content.Context;
+
 import com.bignerdranch.android.nerdfinder.exception.UnauthorizedException;
 import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
@@ -32,6 +34,9 @@ public class DataManagerTest {
     private DataManager mDataManager;
 
     @Mock
+    private Context mContext;
+
+    @Mock
     private Retrofit mRetrofit;
 
     @Mock
@@ -58,7 +63,7 @@ public class DataManagerTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        mDataManager = new TestDataManager(mTokenStore, mRetrofit, mAuthenticatedRetrofit);
+        mDataManager = new TestDataManager(mContext, mTokenStore, mRetrofit, mAuthenticatedRetrofit);
         when(mRetrofit.create(VenueInterface.class))
                 .thenReturn(mVenueInterface);
         when(mAuthenticatedRetrofit.create(VenueInterface.class))

@@ -1,6 +1,7 @@
 package com.bignerdranch.android.nerdfinder.controller;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.widget.Button;
 
@@ -20,6 +21,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -48,6 +51,9 @@ import static org.hamcrest.core.Is.is;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 23, constants = BuildConfig.class)
 public class VenueDetailFragmentTest {
+    @Mock
+    private Context mContext;
+
     @Rule
     public WireMockRule mWireMockRule = new WireMockRule(1111);
     private String mEndpoint = "http://localhost:1111/";
@@ -57,6 +63,7 @@ public class VenueDetailFragmentTest {
 
     @Before
     public void setUp() {
+        MockitoAnnotations.initMocks(this);
         final Gson gson = new GsonBuilder()
                 .registerTypeAdapter(VenueSearchResponse.class,
                         new VenueListDeserializer())
@@ -83,7 +90,7 @@ public class VenueDetailFragmentTest {
                 .build();
         final TokenStore tokenStore = TokenStore.get(RuntimeEnvironment.application);
         tokenStore.setAccessToken("bogus token for testing");
-        mDataManager = new TestDataManager(tokenStore, basicRetrofit, authenticatedRetrofit);
+        mDataManager = new TestDataManager(mContext, tokenStore, basicRetrofit, authenticatedRetrofit);
         stubFor(get(urlMatching("/venues/search.*"))
                 .willReturn(aResponse()
                         .withStatus(200)

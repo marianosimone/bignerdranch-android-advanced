@@ -16,6 +16,9 @@ import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.model.Venue;
 import com.bignerdranch.android.nerdfinder.web.DataManager;
 
+import java.util.Calendar;
+import java.util.Date;
+
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
@@ -89,7 +92,7 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
                 )
         );
         mCheckInButton.setOnClickListener(mCheckInClickListener);
-        mCheckInButton.setVisibility(mDataManager.isLoggedIn() ? VISIBLE : GONE);
+        mCheckInButton.setVisibility(isCanCheckIn() ? VISIBLE : GONE);
     }
 
     @Override
@@ -122,5 +125,20 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         mCheckInButtonProgressBar.setVisibility(GONE);
         final ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
         dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
+    }
+
+    public boolean isCanCheckIn() {
+        if (mDataManager.isLoggedIn()) {
+            final Date lastCheckIn = mDataManager.getLatestCheckIn(mVenueId);
+            final Calendar startOfToday = Calendar.getInstance();
+            startOfToday.set(Calendar.HOUR_OF_DAY, 0);
+            startOfToday.set(Calendar.MINUTE, 0);
+            startOfToday.set(Calendar.SECOND, 0);
+            startOfToday.set(Calendar.MILLISECOND, 0);
+            if (lastCheckIn == null || lastCheckIn.before(startOfToday.getTime())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

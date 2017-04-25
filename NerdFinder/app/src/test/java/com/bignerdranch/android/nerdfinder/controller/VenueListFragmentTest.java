@@ -1,5 +1,6 @@
 package com.bignerdranch.android.nerdfinder.controller;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.TextView;
@@ -20,6 +21,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
@@ -34,7 +37,6 @@ import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
@@ -45,6 +47,10 @@ import static org.hamcrest.core.IsNull.notNullValue;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 23, constants = BuildConfig.class)
 public class VenueListFragmentTest {
+
+    @Mock
+    private Context mContext;
+
     @Rule
     public WireMockRule mWireMockRule;
     private String mEndpoint = "http://localhost:1111/";
@@ -58,6 +64,7 @@ public class VenueListFragmentTest {
 
     @Before
     public void setUp() {
+        MockitoAnnotations.initMocks(this);
         final Gson gson = new GsonBuilder()
                 .registerTypeAdapter(VenueSearchResponse.class, new VenueListDeserializer())
                 .create();
@@ -73,7 +80,7 @@ public class VenueListFragmentTest {
                 .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
                 .build();
         final TokenStore tokenStore = TokenStore.get(RuntimeEnvironment.application);
-        mDataManager = new TestDataManager(tokenStore, retrofit, retrofit);
+        mDataManager = new TestDataManager(mContext, tokenStore, retrofit, retrofit);
         stubFor(get(urlMatching("/venues/search.*"))
                 .willReturn(aResponse()
                         .withStatus(200)

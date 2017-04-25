@@ -3,9 +3,11 @@ package com.bignerdranch.android.nerdfinder.web;
 import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.bignerdranch.android.nerdfinder.exception.UnauthorizedException;
+import com.bignerdranch.android.nerdfinder.helper.NerdFinderSQLiteOpenHelper;
 import com.bignerdranch.android.nerdfinder.listener.VenueCheckInListener;
 import com.bignerdranch.android.nerdfinder.listener.VenueSearchListener;
 import com.bignerdranch.android.nerdfinder.model.TokenStore;
@@ -16,6 +18,7 @@ import com.google.gson.GsonBuilder;
 
 import java.net.HttpURLConnection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +80,8 @@ public class DataManager {
 
     private final Retrofit mAuthenticatedRetrofit;
 
+    private final NerdFinderSQLiteOpenHelper mSQLiteOpenHelper;
+
     public static DataManager get(Context context) {
         if (sDataManager == null) {
             final Gson gson = new GsonBuilder()
@@ -112,12 +117,13 @@ public class DataManager {
                     .build();
 
             final TokenStore tokenStore = TokenStore.get(context);
-            sDataManager = new DataManager(tokenStore, retrofit, authenticatedRetrofit);
+            sDataManager = new DataManager(context, tokenStore, retrofit, authenticatedRetrofit);
         }
         return sDataManager;
     }
 
     DataManager(
+            final @NonNull Context context,
             final @NonNull TokenStore tokenStore,
             final @NonNull Retrofit retrofit,
             final @NonNull Retrofit authenticatedRetrofit) {
@@ -128,6 +134,7 @@ public class DataManager {
         mCheckInListenerList = new ArrayList<>();
         mSubscribeOnScheduler = getSubscribeOnScheduler();
         mObserveOnScheduler = getObserveOnScheduler();
+        mSQLiteOpenHelper = new NerdFinderSQLiteOpenHelper(context);
     }
 
     public void fetchVenueSearch() {
@@ -153,10 +160,18 @@ public class DataManager {
         venueInterface.venueCheckIn(venueId)
                 .subscribeOn(mSubscribeOnScheduler)
                 .observeOn(mObserveOnScheduler)
+                .doOnNext(result -> {
+                    mSQLiteOpenHelper.registerCheckIn(venueId);
+                })
                 .subscribe(
                         result -> notifyCheckInListeners(),
                         this::handleCheckInException
                 );
+    }
+
+    @Nullable
+    public Date getLatestCheckIn(final @NonNull String venueId) {
+        return mSQLiteOpenHelper.getLatestCheckIn(venueId);
     }
 
     private void notifyCheckInListenersTokenExpired() {
