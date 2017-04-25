@@ -31,6 +31,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import rx.Observable;
 import rx.Scheduler;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -137,9 +138,16 @@ public class DataManager {
         mSQLiteOpenHelper = new NerdFinderSQLiteOpenHelper(context);
     }
 
+    public void fetchVenueSearch(final @NonNull String query) {
+        innerFetchVenueSearch(mRetrofit.create(VenueInterface.class).venueSearchNear(query));
+    }
+
     public void fetchVenueSearch() {
-        final VenueInterface venueInterface = mRetrofit.create(VenueInterface.class);
-        venueInterface.venueSearch(TEST_LAT_LNG)
+        innerFetchVenueSearch(mRetrofit.create(VenueInterface.class).venueSearch(TEST_LAT_LNG));
+    }
+
+    private void innerFetchVenueSearch(final @NonNull Observable<VenueSearchResponse> source) {
+        source
                 .subscribeOn(mSubscribeOnScheduler)
                 .observeOn(mObserveOnScheduler)
                 .subscribe(

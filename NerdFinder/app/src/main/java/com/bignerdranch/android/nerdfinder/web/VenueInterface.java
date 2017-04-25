@@ -14,6 +14,9 @@ interface VenueInterface {
     @GET("venues/search")
     Observable<VenueSearchResponse> venueSearch(@Query("ll") String latLngString);
 
+    @GET("venues/search")
+    Observable<VenueSearchResponse> venueSearchNear(@Query("near") String query);
+
     @FormUrlEncoded
     @POST("checkins/add")
     Observable<Object> venueCheckIn(@Field("venueId") String venueId);
