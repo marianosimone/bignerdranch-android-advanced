@@ -3,24 +3,42 @@ package com.bignerdranch.android.nerdmart.inject;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
+import com.bignerdranch.android.nerdmart.model.DataStore;
+import com.bignerdranch.android.nerdmart.model.service.NerdMartServiceManager;
 import com.bignerdranch.android.nerdmartservice.service.NerdMartService;
 import com.bignerdranch.android.nerdmartservice.service.NerdMartServiceInterface;
+
+import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
 
 @Module
-public class NerdMartApplicationModule {
+class NerdMartApplicationModule {
 
     @NonNull
     private final Context mApplicationContext;
 
-    public NerdMartApplicationModule(final @NonNull Context context) {
+    NerdMartApplicationModule(final @NonNull Context context) {
         mApplicationContext = context.getApplicationContext();
     }
 
     @Provides
     NerdMartServiceInterface provideNerdMartServiceInterface() {
         return new NerdMartService();
+    }
+
+    @Provides
+    NerdMartServiceManager provideNerdMartServiceManager(
+            NerdMartServiceInterface serviceInterface
+            , DataStore dataStore
+    ) {
+        return new NerdMartServiceManager(serviceInterface, dataStore);
+    }
+
+    @Provides
+    @Singleton
+    DataStore provideDataStore() {
+        return new DataStore();
     }
 }
