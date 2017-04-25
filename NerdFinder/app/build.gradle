@@ -43,11 +43,15 @@ dependencies {
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'io.reactivex:rxandroid:1.2.0'
     compile 'com.squareup.retrofit2:adapter-rxjava:2.1.0'
+    compile 'com.google.dagger:dagger:2.0.1'
+    provided 'javax.annotation:jsr250-api:1.0'
 
     testCompile 'org.robolectric:robolectric:3.3.2'
     testCompile 'org.khronos:opengl-api:gl1.1-android-2.1_r1'
     testCompile 'org.mockito:mockito-core:2.7.22'
     testCompile 'org.slf4j:slf4j-nop:1.7.12'
+
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.0.1'
 }
 
 configurations {
