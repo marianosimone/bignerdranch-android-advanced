@@ -3,9 +3,8 @@ package com.bignerdranch.android.nerdtweet.controller;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,9 +20,12 @@ import com.bignerdranch.android.nerdtweet.account.Authenticator;
 import com.bignerdranch.android.nerdtweet.model.Tweet;
 import com.bumptech.glide.Glide;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 
 public class TweetListFragment extends Fragment {
@@ -43,7 +45,7 @@ public class TweetListFragment extends Fragment {
         mRecyclerView = (RecyclerView)
                 view.findViewById(R.id.fragment_tweet_list_recycler_view);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        mTweetAdapter = new TweetAdapter(new ArrayList<Tweet>());
+        mTweetAdapter = new TweetAdapter(new ArrayList<>());
         mRecyclerView.setAdapter(mTweetAdapter);
         return view;
     }
@@ -55,29 +57,28 @@ public class TweetListFragment extends Fragment {
     }
 
     private void fetchAccessToken() {
-        AccountManager accountManager = AccountManager.get(getContext());
-        mAccount = new Account(Authenticator.ACCOUNT_NAME,
-                Authenticator.ACCOUNT_TYPE);
+        final AccountManager accountManager = AccountManager.get(getContext());
+        mAccount = new Account(Authenticator.ACCOUNT_NAME, Authenticator.ACCOUNT_TYPE);
         accountManager.getAuthToken(
                 mAccount, Authenticator.AUTH_TOKEN_TYPE, null, getActivity(),
-                future -> {
-                    try {
-                        Bundle bundle = future.getResult();
-                        mAccessToken = bundle.getString(
-                                AccountManager.KEY_AUTHTOKEN);
-                        Log.d(TAG, "Have access token: " + mAccessToken);
-                    } catch (AuthenticatorException |
-                            OperationCanceledException |
-                            IOException e) {
-                        Log.e(TAG, "Got an exception", e);
-                    }
-                }, null);
+                future -> Observable.fromCallable(future::getResult)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                bundle -> {
+                                    mAccessToken = bundle
+                                            .getString(AccountManager.KEY_AUTHTOKEN);
+                                    Log.d(TAG, "Have access token: " + mAccessToken);
+
+                                },
+                                error -> Log.e(TAG, "Got an exception", error)
+                        ), null);
     }
 
     private class TweetAdapter extends RecyclerView.Adapter<TweetHolder> {
         private List<Tweet> mTweetList;
 
-        public TweetAdapter(List<Tweet> tweetList) {
+        public TweetAdapter(final @NonNull List<Tweet> tweetList) {
             mTweetList = tweetList;
         }
 
