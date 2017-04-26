@@ -3,12 +3,19 @@ package com.bignerdranch.android.nerdtweet.model;
 import android.content.ContentValues;
 
 import com.bignerdranch.android.nerdtweet.contentprovider.DatabaseContract;
+import com.google.gson.annotations.SerializedName;
 
 public class User {
 
+    @SerializedName("id_str")
     private int mId;
+
     private String mServerId;
+
+    @SerializedName("screen_name")
     private String mScreenName;
+
+    @SerializedName("profile_image_url")
     private String mPhotoUrl;
 
     public User(String serverId, String screenName, String photoUrl) {
