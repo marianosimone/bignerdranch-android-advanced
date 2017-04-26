@@ -6,6 +6,7 @@ import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -24,9 +25,11 @@ import com.bignerdranch.android.nerdtweet.account.Authenticator;
 import com.bignerdranch.android.nerdtweet.contentprovider.DatabaseContract;
 import com.bignerdranch.android.nerdtweet.contentprovider.TweetCursorWrapper;
 import com.bignerdranch.android.nerdtweet.contentprovider.UserCursorWrapper;
+import com.bignerdranch.android.nerdtweet.model.PreferenceStore;
 import com.bignerdranch.android.nerdtweet.model.Tweet;
 import com.bignerdranch.android.nerdtweet.model.User;
 import com.bumptech.glide.Glide;
+import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,6 +49,7 @@ public class TweetListFragment extends Fragment {
 
     private RecyclerView mRecyclerView;
     private TweetAdapter mTweetAdapter;
+    private boolean mSyncingPeriodically;
 
     private final ContentObserver mContentObserver = new ContentObserver(new Handler()) {
         @Override
@@ -92,13 +96,7 @@ public class TweetListFragment extends Fragment {
                                     mAccessToken = bundle
                                             .getString(AccountManager.KEY_AUTHTOKEN);
                                     initRecyclerView();
-                                    ContentResolver.setIsSyncable(
-                                            mAccount, DatabaseContract.AUTHORITY, 1);
-                                    ContentResolver.setSyncAutomatically(
-                                            mAccount, DatabaseContract.AUTHORITY, true);
-                                    ContentResolver.addPeriodicSync(
-                                            mAccount, DatabaseContract.AUTHORITY, Bundle.EMPTY,
-                                            5);
+                                    setupFirebaseMessaging();
                                     getContext().getContentResolver().registerContentObserver(
                                             DatabaseContract.Tweet.CONTENT_URI, true,
                                             mContentObserver);
@@ -106,6 +104,45 @@ public class TweetListFragment extends Fragment {
                                 },
                                 error -> Log.e(TAG, "Got an exception", error)
                         ), null);
+    }
+
+    private void setupFirebaseMessaging() {
+        PreferenceStore preferenceStore = PreferenceStore.get(getContext());
+        String currentToken = preferenceStore.getFirebaseToken();
+        if (currentToken == null) {
+            new FirebaseRegistrationTask().execute();
+        } else {
+            Log.d(TAG, "Have current token: " + currentToken);
+        }
+    }
+
+    private class FirebaseRegistrationTask extends AsyncTask<Void, Void, String> {
+        @Override
+        protected String doInBackground(Void... voids) {
+            if (getContext() == null) {
+                return null;
+            }
+            return FirebaseInstanceId.getInstance().getToken();
+        }
+
+        @Override
+        protected void onPostExecute(String token) {
+            if (token == null) {
+                setupPeriodicSync();
+                return;
+            }
+            Log.d(TAG, "Have new token: " + token);
+            PreferenceStore.get(getContext()).setFirebaseToken(token);
+        }
+    }
+
+    private void setupPeriodicSync() {
+        mSyncingPeriodically = true;
+        ContentResolver.setIsSyncable(mAccount, DatabaseContract.AUTHORITY, 1);
+        ContentResolver.setSyncAutomatically(
+                mAccount, DatabaseContract.AUTHORITY, true);
+        ContentResolver.addPeriodicSync(
+                mAccount, DatabaseContract.AUTHORITY, Bundle.EMPTY, 30);
     }
 
     private void initRecyclerView() {

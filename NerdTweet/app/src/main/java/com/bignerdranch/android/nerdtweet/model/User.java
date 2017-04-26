@@ -8,7 +8,7 @@ import com.google.gson.annotations.SerializedName;
 public class User {
 
     @SerializedName("id_str")
-    private int mId;
+    private String mId;
 
     private String mServerId;
 
