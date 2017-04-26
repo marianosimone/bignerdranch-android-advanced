@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
