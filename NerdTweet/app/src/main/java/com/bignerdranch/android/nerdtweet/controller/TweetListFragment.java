@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import com.bignerdranch.android.nerdtweet.R;
 import com.bignerdranch.android.nerdtweet.account.Authenticator;
+import com.bignerdranch.android.nerdtweet.contentprovider.DatabaseContract;
 import com.bignerdranch.android.nerdtweet.model.Tweet;
 import com.bumptech.glide.Glide;
 
@@ -73,6 +74,19 @@ public class TweetListFragment extends Fragment {
                                 },
                                 error -> Log.e(TAG, "Got an exception", error)
                         ), null);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        clearDb();
+    }
+
+    private void clearDb() {
+        getContext().getContentResolver()
+                .delete(DatabaseContract.User.CONTENT_URI, null, null);
+        getContext().getContentResolver()
+                .delete(DatabaseContract.Tweet.CONTENT_URI, null, null);
     }
 
     private class TweetAdapter extends RecyclerView.Adapter<TweetHolder> {
