@@ -22,8 +22,8 @@ import okhttp3.Request;
 public class TwitterOauthHelper {
 
     private static final String TAG = "TwitterOauthHelper";
-    private static final String CONSUMER_KEY = "YOUR_CONSUMER_KEY";
-    private static final String CONSUMER_SECRET = "YOUR_CONSUMER_SECRET";
+    private static final String CONSUMER_KEY = "fqrYlzy3VTCSJbrTrkbNRxSGR";
+    private static final String CONSUMER_SECRET = "7WLM6EP9Sa7iXHeEDBSc9Q4FpGzARm4dFJHlIl9gNBxrPmjJiV";
     private static final String KEY_SPEC = "HmacSHA1";
     private static final int MILLISECONDS_PER_SECOND = 1000;
 

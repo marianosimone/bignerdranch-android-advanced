@@ -1,10 +1,15 @@
 package com.bignerdranch.android.nerdtweet.controller;
 
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,9 +17,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bignerdranch.android.nerdtweet.R;
+import com.bignerdranch.android.nerdtweet.account.Authenticator;
 import com.bignerdranch.android.nerdtweet.model.Tweet;
 import com.bumptech.glide.Glide;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +29,9 @@ import java.util.List;
 public class TweetListFragment extends Fragment {
 
     private static final String TAG = "TweetListFragment";
+
+    private String mAccessToken;
+    private Account mAccount;
 
     private RecyclerView mRecyclerView;
     private TweetAdapter mTweetAdapter;
@@ -36,6 +46,32 @@ public class TweetListFragment extends Fragment {
         mTweetAdapter = new TweetAdapter(new ArrayList<Tweet>());
         mRecyclerView.setAdapter(mTweetAdapter);
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        fetchAccessToken();
+    }
+
+    private void fetchAccessToken() {
+        AccountManager accountManager = AccountManager.get(getContext());
+        mAccount = new Account(Authenticator.ACCOUNT_NAME,
+                Authenticator.ACCOUNT_TYPE);
+        accountManager.getAuthToken(
+                mAccount, Authenticator.AUTH_TOKEN_TYPE, null, getActivity(),
+                future -> {
+                    try {
+                        Bundle bundle = future.getResult();
+                        mAccessToken = bundle.getString(
+                                AccountManager.KEY_AUTHTOKEN);
+                        Log.d(TAG, "Have access token: " + mAccessToken);
+                    } catch (AuthenticatorException |
+                            OperationCanceledException |
+                            IOException e) {
+                        Log.e(TAG, "Got an exception", e);
+                    }
+                }, null);
     }
 
     private class TweetAdapter extends RecyclerView.Adapter<TweetHolder> {
