@@ -1,5 +1,6 @@
 package com.bignerdranch.android.nerdmail.controller;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -13,6 +14,10 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.bignerdranch.android.nerdmail.R;
+import com.bignerdranch.android.nerdmail.inject.Injector;
+import com.bignerdranch.android.nerdmail.model.EmailNotifier;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -32,11 +37,15 @@ public class DrawerActivity extends AppCompatActivity {
 
     private int mCurrentToolbarTitle;
 
+    @Inject
+    EmailNotifier mEmailNotifier;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
         ButterKnife.bind(this);
+        Injector.obtain(getBaseContext()).inject(this);
         setSupportActionBar(mToolbar);
 
         mNavigationView.setNavigationItemSelectedListener(
@@ -94,6 +103,7 @@ public class DrawerActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateToolbarTitle();
+        markEmailsAsNotified();
     }
 
     @Override
@@ -122,5 +132,14 @@ public class DrawerActivity extends AppCompatActivity {
         if (mCurrentToolbarTitle != 0) {
             mToolbar.setTitle(mCurrentToolbarTitle);
         }
+    }
+
+    private void clearNotifications() {
+        mEmailNotifier.clearNotifications();
+    }
+
+    private void markEmailsAsNotified() {
+        final Intent intent = EmailService.getClearIntent(this);
+        startService(intent);
     }
 }

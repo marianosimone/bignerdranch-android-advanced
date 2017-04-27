@@ -25,9 +25,9 @@ class NerdMailApplicationModule {
         return mApplicationContext;
     }
 
-    @Provides
-    @Singleton
-    DataManager provideDataManager(final @NonNull Context context) {
-        return new DataManager(context);
-    }
+//    @Provides
+//    @Singleton
+//    DataManager provideDataManager(final @NonNull Context context) {
+//        return new DataManager(context);
+//    }
 }

@@ -12,6 +12,7 @@ import com.bignerdranch.android.nerdmailservice.NerdMailService;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import rx.Observable;
@@ -21,13 +22,15 @@ import timber.log.Timber;
 
 @Singleton
 public class DataManager {
+
     private static final String FETCHED_EMAILS_KEY = "DataManager.FetchedEmails";
 
     private Context mContext;
     private EmailDatabaseHelper mEmailDatabaseHelper;
     private NerdMailService mNerdMailService;
 
-    public DataManager(final @NonNull Context context) {
+    @Inject
+    DataManager(final @NonNull Context context) {
         mContext = context;
         mEmailDatabaseHelper = new EmailDatabaseHelper(mContext);
         mNerdMailService = new NerdMailService();
@@ -70,23 +73,20 @@ public class DataManager {
 
     public Observable<List<Email>> getNotificationEmails() {
         return Observable.create((Observable.OnSubscribe<List<Email>>) subscriber -> {
-            String[] notifiedValue = new String[1];
-            notifiedValue[0] = "0";
-            Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
+            final Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
                     .query(EmailDatabaseHelper.TABLE_NAME, null,
-                            "notified = ? AND spam = 0", notifiedValue,
+                            "notified = 0 AND spam = 0", null,
                             null, null, null);
-            EmailCursorWrapper emailCursorWrapper =
-                    new EmailCursorWrapper(emailCursor);
+            final EmailCursorWrapper emailCursorWrapper = new EmailCursorWrapper(emailCursor);
 
-            List<Email> emails = new ArrayList<>();
+            final List<Email> emails = new ArrayList<>();
             try {
                 emailCursorWrapper.moveToFirst();
                 while (!emailCursorWrapper.isAfterLast()) {
                     emails.add(emailCursorWrapper.getEmail());
                     emailCursorWrapper.moveToNext();
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 Timber.e(e, "Got exception");
             } finally {
                 emailCursor.close();
@@ -94,7 +94,7 @@ public class DataManager {
             }
             subscriber.onNext(emails);
             subscriber.onCompleted();
-        })
+        }).filter(messages -> !messages.isEmpty())
                 .onBackpressureBuffer()
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread());
@@ -136,7 +136,7 @@ public class DataManager {
                 .subscribe();
     }
 
-    public void insertEmail(Email email) {
+    public void insertEmail(final @NonNull Email email) {
         ContentValues contentValues = getEmailContentValues(email);
         mEmailDatabaseHelper.getWritableDatabase()
                 .insert(EmailDatabaseHelper.TABLE_NAME,

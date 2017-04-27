@@ -3,6 +3,7 @@ package com.bignerdranch.android.nerdmail;
 import android.app.Application;
 import android.support.annotation.NonNull;
 
+import com.bignerdranch.android.nerdmail.controller.EmailService;
 import com.bignerdranch.android.nerdmail.inject.Injector;
 import com.bignerdranch.android.nerdmail.inject.NerdMailComponent;
 import com.bignerdranch.android.nerdmail.inject.NerdMailGraph;
@@ -31,5 +32,9 @@ public class NerdMailApplication extends Application {
             return mComponent;
         }
         return super.getSystemService(name);
+    }
+
+    public void inject(EmailService emailService) {
+
     }
 }
