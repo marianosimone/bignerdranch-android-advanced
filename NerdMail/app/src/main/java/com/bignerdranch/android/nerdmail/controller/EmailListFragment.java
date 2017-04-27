@@ -2,6 +2,8 @@ package com.bignerdranch.android.nerdmail.controller;
 
 import android.app.ProgressDialog;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -11,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.bignerdranch.android.nerdmail.R;
+import com.bignerdranch.android.nerdmail.inject.Injector;
 import com.bignerdranch.android.nerdmail.model.DataManager;
 import com.bignerdranch.android.nerdmail.view.EmailAdapter;
 import com.bignerdranch.android.nerdmailservice.Email;
@@ -18,6 +21,8 @@ import com.bignerdranch.android.nerdmailservice.Email;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import rx.Observable;
 import rx.Subscription;
@@ -27,6 +32,8 @@ public abstract class EmailListFragment extends Fragment {
     private static final String TAG = "EmailListFragment";
 
     RecyclerView mEmailRecyclerView;
+
+    @Inject
     DataManager mDataManager;
 
     private CompositeSubscription mCompositeSubscription;
@@ -34,8 +41,10 @@ public abstract class EmailListFragment extends Fragment {
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup parent, Bundle savedInstanceState) {
-        mDataManager = DataManager.get(getContext());
+            final @NonNull LayoutInflater inflater,
+            final @Nullable ViewGroup parent,
+            final @Nullable Bundle savedInstanceState) {
+        Injector.obtain(getContext()).inject(this);
         mCompositeSubscription = new CompositeSubscription();
         View view = inflater.inflate(R.layout.fragment_email_list, parent, false);
         setupLoadingDialog();
@@ -44,7 +53,7 @@ public abstract class EmailListFragment extends Fragment {
                 view.findViewById(R.id.email_recycler_view);
         mEmailRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         mEmailRecyclerView.setAdapter(
-                new EmailAdapter(getContext(), Collections.EMPTY_LIST));
+                new EmailAdapter(getContext(), Collections.emptyList()));
 
         return view;
     }

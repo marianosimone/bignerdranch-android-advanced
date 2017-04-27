@@ -10,6 +10,7 @@ import android.graphics.LightingColorFilter;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.bignerdranch.android.nerdmail.R;
+import com.bignerdranch.android.nerdmail.inject.Injector;
 import com.bignerdranch.android.nerdmail.model.DataManager;
 import com.bignerdranch.android.nerdmailservice.Email;
 
@@ -26,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import javax.inject.Inject;
 
 public class EmailListItemView extends View implements View.OnTouchListener {
 
@@ -37,8 +41,10 @@ public class EmailListItemView extends View implements View.OnTouchListener {
     private static final int SMALL_TEXT_SIZE = 14;
     private static final int STAR_SIZE = 24;
     private static final int DIVIDER_SIZE = 1;
-
     private static final String ELLIPSIS = "...";
+
+    @Inject
+    DataManager mDataManager;
 
     float mScreenDensity;
     // default padding size in pixels
@@ -72,8 +78,9 @@ public class EmailListItemView extends View implements View.OnTouchListener {
         this(context, null);
     }
 
-    public EmailListItemView(Context context, AttributeSet attrs) {
+    public EmailListItemView(final @NonNull Context context, final @Nullable AttributeSet attrs) {
         super(context, attrs);
+        Injector.obtain(getContext()).inject(this);
         setOnTouchListener(this);
 
         mScreenDensity = context.getResources().getDisplayMetrics().density;
@@ -246,8 +253,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
             case MotionEvent.ACTION_DOWN:
                 if (isStarClick(event)) {
                     mEmail.setImportant(!mEmail.isImportant());
-                    DataManager dataManager = DataManager.get(getContext());
-                    dataManager.updateEmail(mEmail);
+                    mDataManager.updateEmail(mEmail);
                     invalidate();
                     return true;
                 }

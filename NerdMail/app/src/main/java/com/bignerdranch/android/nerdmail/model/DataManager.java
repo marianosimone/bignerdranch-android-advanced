@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.bignerdranch.android.nerdmailservice.Email;
@@ -12,27 +13,22 @@ import com.bignerdranch.android.nerdmailservice.NerdMailService;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Singleton;
+
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
+@Singleton
 public class DataManager {
     private static final String TAG = "DataManager";
     private static final String FETCHED_EMAILS_KEY = "DataManager.FetchedEmails";
-    private static DataManager sDataManager;
 
     private Context mContext;
     private EmailDatabaseHelper mEmailDatabaseHelper;
     private NerdMailService mNerdMailService;
 
-    public static DataManager get(Context context) {
-        if (sDataManager == null) {
-            sDataManager = new DataManager(context);
-        }
-        return sDataManager;
-    }
-
-    private DataManager(Context context) {
+    public DataManager(final @NonNull Context context) {
         mContext = context;
         mEmailDatabaseHelper = new EmailDatabaseHelper(mContext);
         mNerdMailService = new NerdMailService();
@@ -43,7 +39,8 @@ public class DataManager {
             if (!fetchedEmails()) {
                 mNerdMailService.fetchEmails()
                         .subscribe(DataManager.this::insertEmail,
-                                throwable -> {},
+                                throwable -> {
+                                },
                                 DataManager.this::setFetchedEmails);
             }
 
