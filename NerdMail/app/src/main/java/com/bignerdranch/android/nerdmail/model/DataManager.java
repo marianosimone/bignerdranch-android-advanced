@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -40,36 +39,33 @@ public class DataManager {
     }
 
     public Observable<Email> getEmails() {
-        return Observable.create(new Observable.OnSubscribe<Email>() {
-            @Override
-            public void call(Subscriber<? super Email> subscriber) {
-                if (!fetchedEmails()) {
-                    mNerdMailService.fetchEmails()
-                            .subscribe(DataManager.this::insertEmail,
-                                    throwable -> {},
-                                    DataManager.this::setFetchedEmails);
-                }
-
-                Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
-                        .query(EmailDatabaseHelper.TABLE_NAME, null, null, null, null,
-                                null, EmailDatabaseHelper.ID_COLUMN + " DESC");
-                EmailCursorWrapper emailCursorWrapper =
-                        new EmailCursorWrapper(emailCursor);
-
-                try {
-                    emailCursorWrapper.moveToFirst();
-                    while (!emailCursorWrapper.isAfterLast()) {
-                        subscriber.onNext(emailCursorWrapper.getEmail());
-                        emailCursorWrapper.moveToNext();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Got exception", e);
-                } finally {
-                    emailCursor.close();
-                    emailCursorWrapper.close();
-                }
-                subscriber.onCompleted();
+        return Observable.create((Observable.OnSubscribe<Email>) subscriber -> {
+            if (!fetchedEmails()) {
+                mNerdMailService.fetchEmails()
+                        .subscribe(DataManager.this::insertEmail,
+                                throwable -> {},
+                                DataManager.this::setFetchedEmails);
             }
+
+            Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
+                    .query(EmailDatabaseHelper.TABLE_NAME, null, null, null, null,
+                            null, EmailDatabaseHelper.ID_COLUMN + " DESC");
+            EmailCursorWrapper emailCursorWrapper =
+                    new EmailCursorWrapper(emailCursor);
+
+            try {
+                emailCursorWrapper.moveToFirst();
+                while (!emailCursorWrapper.isAfterLast()) {
+                    subscriber.onNext(emailCursorWrapper.getEmail());
+                    emailCursorWrapper.moveToNext();
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Got exception", e);
+            } finally {
+                emailCursor.close();
+                emailCursorWrapper.close();
+            }
+            subscriber.onCompleted();
         })
                 .onBackpressureBuffer()
                 .subscribeOn(Schedulers.newThread())
@@ -77,34 +73,31 @@ public class DataManager {
     }
 
     public Observable<List<Email>> getNotificationEmails() {
-        return Observable.create(new Observable.OnSubscribe<List<Email>>() {
-            @Override
-            public void call(Subscriber<? super List<Email>> subscriber) {
-                String[] notifiedValue = new String[1];
-                notifiedValue[0] = "0";
-                Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
-                        .query(EmailDatabaseHelper.TABLE_NAME, null,
-                                "notified = ? AND spam = 0", notifiedValue,
-                                null, null, null);
-                EmailCursorWrapper emailCursorWrapper =
-                        new EmailCursorWrapper(emailCursor);
+        return Observable.create((Observable.OnSubscribe<List<Email>>) subscriber -> {
+            String[] notifiedValue = new String[1];
+            notifiedValue[0] = "0";
+            Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
+                    .query(EmailDatabaseHelper.TABLE_NAME, null,
+                            "notified = ? AND spam = 0", notifiedValue,
+                            null, null, null);
+            EmailCursorWrapper emailCursorWrapper =
+                    new EmailCursorWrapper(emailCursor);
 
-                List<Email> emails = new ArrayList<Email>();
-                try {
-                    emailCursorWrapper.moveToFirst();
-                    while (!emailCursorWrapper.isAfterLast()) {
-                        emails.add(emailCursorWrapper.getEmail());
-                        emailCursorWrapper.moveToNext();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Got exception", e);
-                } finally {
-                    emailCursor.close();
-                    emailCursorWrapper.close();
+            List<Email> emails = new ArrayList<Email>();
+            try {
+                emailCursorWrapper.moveToFirst();
+                while (!emailCursorWrapper.isAfterLast()) {
+                    emails.add(emailCursorWrapper.getEmail());
+                    emailCursorWrapper.moveToNext();
                 }
-                subscriber.onNext(emails);
-                subscriber.onCompleted();
+            } catch (Exception e) {
+                Log.e(TAG, "Got exception", e);
+            } finally {
+                emailCursor.close();
+                emailCursorWrapper.close();
             }
+            subscriber.onNext(emails);
+            subscriber.onCompleted();
         })
                 .onBackpressureBuffer()
                 .subscribeOn(Schedulers.newThread())
@@ -112,36 +105,33 @@ public class DataManager {
     }
 
     public void markEmailsAsNotified() {
-        Observable.create(new Observable.OnSubscribe<Void>() {
-            @Override
-            public void call(Subscriber<? super Void> subscriber) {
-                Log.d(TAG, "Mark emails as notified");
-                String[] notifiedValue = new String[1];
-                notifiedValue[0] = "0";
-                Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
-                        .query(EmailDatabaseHelper.TABLE_NAME, null,
-                                "notified = ? AND spam = 0", notifiedValue,
-                                null, null, null);
-                EmailCursorWrapper emailCursorWrapper =
-                        new EmailCursorWrapper(emailCursor);
+        Observable.create((Observable.OnSubscribe<Void>) subscriber -> {
+            Log.d(TAG, "Mark emails as notified");
+            String[] notifiedValue = new String[1];
+            notifiedValue[0] = "0";
+            Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
+                    .query(EmailDatabaseHelper.TABLE_NAME, null,
+                            "notified = ? AND spam = 0", notifiedValue,
+                            null, null, null);
+            EmailCursorWrapper emailCursorWrapper =
+                    new EmailCursorWrapper(emailCursor);
 
-                List<Email> emails = new ArrayList<>();
-                try {
-                    emailCursorWrapper.moveToFirst();
-                    while (!emailCursorWrapper.isAfterLast()) {
-                        emails.add(emailCursorWrapper.getEmail());
-                        emailCursorWrapper.moveToNext();
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "Got exception", e);
-                } finally {
-                    emailCursor.close();
-                    emailCursorWrapper.close();
+            List<Email> emails = new ArrayList<>();
+            try {
+                emailCursorWrapper.moveToFirst();
+                while (!emailCursorWrapper.isAfterLast()) {
+                    emails.add(emailCursorWrapper.getEmail());
+                    emailCursorWrapper.moveToNext();
                 }
-                for (Email email : emails) {
-                    email.setNotified(true);
-                    updateEmail(email);
-                }
+            } catch (Exception e) {
+                Log.e(TAG, "Got exception", e);
+            } finally {
+                emailCursor.close();
+                emailCursorWrapper.close();
+            }
+            for (Email email : emails) {
+                email.setNotified(true);
+                updateEmail(email);
             }
         })
                 .onBackpressureBuffer()
