@@ -14,7 +14,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -31,9 +30,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-public class EmailListItemView extends View implements View.OnTouchListener {
+import timber.log.Timber;
 
-    private static final String TAG = "EmailListItemView";
+public class EmailListItemView extends View implements View.OnTouchListener {
 
     private static final int PADDING_SIZE = 16;
     private static final int BODY_PADDING_SIZE = 4;
@@ -257,7 +256,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
                     invalidate();
                     return true;
                 }
-                Log.d(TAG, "Star was not clicked");
+                Timber.d("Star was not clicked");
                 return true;
         }
         return false;

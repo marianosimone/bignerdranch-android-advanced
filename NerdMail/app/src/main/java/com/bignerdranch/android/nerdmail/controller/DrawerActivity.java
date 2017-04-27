@@ -9,7 +9,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -17,9 +16,9 @@ import com.bignerdranch.android.nerdmail.R;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import timber.log.Timber;
 
 public class DrawerActivity extends AppCompatActivity {
-    private static final String TAG = "DrawerActivity";
     private static final String EXTRA_CURRENT_DRAWER_ITEM = "DrawerActivity.CurrentDrawerItem";
 
     @BindView(R.id.activity_drawer_layout)
@@ -62,7 +61,7 @@ public class DrawerActivity extends AppCompatActivity {
                             fragment = new AllFragment();
                             break;
                         default:
-                            Log.e(TAG, "Incorrect nav drawer item selection");
+                            Timber.e("Incorrect nav drawer item selection");
                             return false;
                     }
                     updateFragment(fragment);

@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.bignerdranch.android.nerdmailservice.Email;
 import com.bignerdranch.android.nerdmailservice.NerdMailService;
@@ -18,10 +17,10 @@ import javax.inject.Singleton;
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+import timber.log.Timber;
 
 @Singleton
 public class DataManager {
-    private static final String TAG = "DataManager";
     private static final String FETCHED_EMAILS_KEY = "DataManager.FetchedEmails";
 
     private Context mContext;
@@ -56,8 +55,8 @@ public class DataManager {
                     subscriber.onNext(emailCursorWrapper.getEmail());
                     emailCursorWrapper.moveToNext();
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Got exception", e);
+            } catch (final @NonNull Exception e) {
+                Timber.e(e, "Got exception");
             } finally {
                 emailCursor.close();
                 emailCursorWrapper.close();
@@ -80,7 +79,7 @@ public class DataManager {
             EmailCursorWrapper emailCursorWrapper =
                     new EmailCursorWrapper(emailCursor);
 
-            List<Email> emails = new ArrayList<Email>();
+            List<Email> emails = new ArrayList<>();
             try {
                 emailCursorWrapper.moveToFirst();
                 while (!emailCursorWrapper.isAfterLast()) {
@@ -88,7 +87,7 @@ public class DataManager {
                     emailCursorWrapper.moveToNext();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Got exception", e);
+                Timber.e(e, "Got exception");
             } finally {
                 emailCursor.close();
                 emailCursorWrapper.close();
@@ -103,7 +102,7 @@ public class DataManager {
 
     public void markEmailsAsNotified() {
         Observable.create((Observable.OnSubscribe<Void>) subscriber -> {
-            Log.d(TAG, "Mark emails as notified");
+            Timber.d("Mark emails as notified");
             String[] notifiedValue = new String[1];
             notifiedValue[0] = "0";
             Cursor emailCursor = mEmailDatabaseHelper.getReadableDatabase()
@@ -121,7 +120,7 @@ public class DataManager {
                     emailCursorWrapper.moveToNext();
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Got exception", e);
+                Timber.e(e, "Got exception");
             } finally {
                 emailCursor.close();
                 emailCursorWrapper.close();

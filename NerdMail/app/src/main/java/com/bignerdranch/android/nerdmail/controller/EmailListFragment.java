@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -27,11 +26,11 @@ import javax.inject.Inject;
 import rx.Observable;
 import rx.Subscription;
 import rx.subscriptions.CompositeSubscription;
+import timber.log.Timber;
 
 public abstract class EmailListFragment extends Fragment {
-    private static final String TAG = "EmailListFragment";
 
-    RecyclerView mEmailRecyclerView;
+    private RecyclerView mEmailRecyclerView;
 
     @Inject
     DataManager mDataManager;
@@ -86,7 +85,7 @@ public abstract class EmailListFragment extends Fragment {
         addSubscription(getEmailList()
                 .compose(loadingTransformer())
                 .subscribe(emailList::add,
-                        e -> Log.e(TAG, "got error", e),
+                        e -> Timber.e(e, "got error"),
                         () -> setupAdapter(emailList)));
     }
 
