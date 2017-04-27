@@ -22,6 +22,11 @@ import com.bignerdranch.android.nerdmail.R;
 import com.bignerdranch.android.nerdmail.model.DataManager;
 import com.bignerdranch.android.nerdmailservice.Email;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 public class EmailListItemView extends View implements View.OnTouchListener {
 
     private static final String TAG = "EmailListItemView";
@@ -32,6 +37,8 @@ public class EmailListItemView extends View implements View.OnTouchListener {
     private static final int SMALL_TEXT_SIZE = 14;
     private static final int STAR_SIZE = 24;
     private static final int DIVIDER_SIZE = 1;
+
+    private static final String ELLIPSIS = "...";
 
     float mScreenDensity;
     // default padding size in pixels
@@ -52,6 +59,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
     private Bitmap mUnimportantStar;
 
     private Email mEmail;
+    private static final int MAX_LINES_TO_SHOW = 2;
 
     float mStarTop;
     float mStarLeft;
@@ -161,7 +169,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
         canvas.drawLine(0, dividerY, width, dividerY, mDividerPaint);
 
         // Draw the sender address
-        Paint.FontMetrics fm = mSenderAddressTextPaint.getFontMetrics();
+        final Paint.FontMetrics fm = mSenderAddressTextPaint.getFontMetrics();
         float senderX = mPaddingSize;
         float senderTop = (float) Math.ceil(Math.abs(fm.top));
         float senderBottom = (float) Math.ceil(Math.abs(fm.bottom));
@@ -171,7 +179,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
                 mEmail.getSenderAddress(), senderX, senderBaseline, mSenderAddressTextPaint);
 
         // Draw the subject
-        Paint.FontMetrics subjectFm = mSubjectTextPaint.getFontMetrics();
+        final Paint.FontMetrics subjectFm = mSubjectTextPaint.getFontMetrics();
         float subjectX = PADDING_SIZE * mScreenDensity;
         float subjectTop = (float) Math.ceil(Math.abs(subjectFm.top));
         float subjectBottom = (float) Math.ceil(Math.abs(subjectFm.bottom));
@@ -180,64 +188,22 @@ public class EmailListItemView extends View implements View.OnTouchListener {
         canvas.drawText(mEmail.getSubject(), subjectX, subjectBaseline, mSubjectTextPaint);
 
         // Draw the body
-        Paint.FontMetrics bodyFm = mBodyTextPaint.getFontMetrics();
+        final Paint.FontMetrics bodyFm = mBodyTextPaint.getFontMetrics();
         float bodyX = mPaddingSize;
-        float bodyTop = (float) Math.ceil(Math.abs(bodyFm.top));
         float bodyBottom = (float) Math.ceil(Math.abs(bodyFm.bottom));
-        // First line of the body text
-        float bodyFirstBaseline = subjectY + bodyTop;
-        float bodyFirstY = bodyFirstBaseline + bodyBottom;
-        // Second line of the body text
-        float extraBodySpacing = 4 * mScreenDensity;
-        float bodySecondBaseline = bodyFirstY + bodyTop + extraBodySpacing;
+        float extraBodySpacing = 12 * mScreenDensity;
 
-        float bodyWidth = getWidth() - (2 * mPaddingSize)
-                - mStarPixelSize - mPaddingSize;
-        String[] bodyLines = new String[2];
-        if (mBodyTextPaint.measureText(mEmail.getBody()) < bodyWidth) {
-            bodyLines[0] = mEmail.getBody();
-        } else {
-            int currentLine = 0;
-            String[] bodyWords = mEmail.getBody().split(" ");
-            int numberOfWords = bodyWords.length;
-            int currentWord = 0;
-            String bodyLine = "";
-            String checkingLine = bodyWords[currentWord];
-            while ((currentWord < numberOfWords - 1) && (currentLine < 2)) {
-                if (mBodyTextPaint.measureText(checkingLine) < bodyWidth) {
-                    bodyLine = checkingLine;
-                    currentWord++;
-                    checkingLine = bodyLine + " " + bodyWords[currentWord];
-                } else {
-                    bodyLines[currentLine] = bodyLine;
-                    currentLine++;
-                    bodyLine = "";
-                    checkingLine = bodyWords[currentWord];
-                }
-            }
-            if (currentLine < 2) {
-                // add second line since we ran out of words for the second line
-                bodyLines[currentLine] = bodyLine;
-            }
-            if (currentWord < numberOfWords - 1) {
-                // ellipsize second sentence
-                String secondSentence = bodyLines[1];
-                secondSentence = secondSentence
-                        .substring(0, secondSentence.length() - 4);
-                secondSentence += "...";
-                bodyLines[1] = secondSentence;
-            }
+        final Collection<String> bodyLines = getBodyLines();
+        float lastBottom = subjectY;
+        for (final String line : bodyLines) {
+            float baseLine = lastBottom + bodyBottom + extraBodySpacing;
+            canvas.drawText(line, bodyX, baseLine, mBodyTextPaint);
+            lastBottom = baseLine + bodyBottom;
         }
-        if (bodyLines[0] != null) {
-            canvas.drawText(bodyLines[0], bodyX, bodyFirstBaseline, mBodyTextPaint);
-        }
-        if (bodyLines[1] != null) {
-            canvas.drawText(bodyLines[1], bodyX, bodySecondBaseline, mBodyTextPaint);
-        }
+
         // Draw the star
         mStarLeft = getWidth() - mPaddingSize - mStarPixelSize;
-        float starHeight = getHeight() - senderY - mDividerSize;
-        mStarTop = (starHeight / 2) + senderY - (mStarPixelSize / 2);
+        mStarTop = senderTop;
         if (mEmail.isImportant()) {
             canvas.drawBitmap(mImportantStar, mStarLeft, mStarTop, mStarPaint);
         } else {
@@ -264,7 +230,7 @@ public class EmailListItemView extends View implements View.OnTouchListener {
         float bodyHeight = getFontHeight(bodyFm);
         float bodyPadding = BODY_PADDING_SIZE * mScreenDensity;
         float totalHeight = layoutPadding + mPaddingSize + senderHeight
-                + subjectHeight + (bodyHeight * 2) + bodyPadding
+                + subjectHeight + (bodyHeight * MAX_LINES_TO_SHOW) + bodyPadding
                 + mPaddingSize + mDividerSize;
         return (int) totalHeight;
     }
@@ -299,5 +265,31 @@ public class EmailListItemView extends View implements View.OnTouchListener {
         boolean isXInStarRange = (x >= mStarLeft) && (x <= starRight);
         boolean isYInStarRange = (y >= mStarTop) && (y <= starBottom);
         return isXInStarRange && isYInStarRange;
+    }
+
+    public Collection<String> getBodyLines() {
+        final float bodyWidth = getWidth() - (2 * mPaddingSize) - mStarPixelSize - mPaddingSize;
+        if (mBodyTextPaint.measureText(mEmail.getBody()) < bodyWidth) {
+            return Collections.singleton(mEmail.getBody());
+        }
+
+        final List<String> lines = new ArrayList<>(MAX_LINES_TO_SHOW);
+        final String[] words = mEmail.getBody().split(" ");
+        String currentLine = words[0];
+        int currentWord = 1;
+        while (lines.size() < MAX_LINES_TO_SHOW && currentWord < words.length) {
+            while (currentWord < words.length && mBodyTextPaint.measureText(currentLine + " " + words[currentWord]) < bodyWidth) {
+                currentLine += " " + words[currentWord];
+                currentWord += 1;
+            }
+            lines.add(currentLine);
+            currentLine = currentWord < words.length ? words[currentWord] : "";
+            currentWord += 1;
+        }
+        if (currentWord < words.length) {
+            final String lastLine = lines.remove(lines.size() - 1);
+            lines.add(lastLine.substring(0, lastLine.length() - ELLIPSIS.length()) + ELLIPSIS);
+        }
+        return lines;
     }
 }
